@@ -22,12 +22,18 @@ fn main() {
     let out_dir = args.out_dir.unwrap_or("dist".into());
     _ = std::fs::create_dir_all(&out_dir);
 
-    let content = std::fs::read_to_string(args.template_file).unwrap();
+    let content = std::fs::read_to_string(&args.template_file).unwrap();
 
     for variant in Variant::iter() {
         let result = generate::replace_templates(&content, variant, &Config::default());
         if args.write {
-            std::fs::write(out_dir.join(format!("{variant}.toml")), result).unwrap();
+            let filetype = args
+                .template_file
+                .extension()
+                .map_or("".to_string(), |t| format!(".{}", t.to_string_lossy()));
+            let filename = out_dir.join(format!("{variant}{filetype}"));
+
+            std::fs::write(filename, result).unwrap();
         } else {
             std::io::stdout().write_all(result.as_bytes()).unwrap();
         }
