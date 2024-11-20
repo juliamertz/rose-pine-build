@@ -35,11 +35,11 @@ impl Capture {
 
 fn parse_capture_role(value: &str, variant: Variant) -> Role {
     let role_name = match value.split_once("|") {
-        Some((light, dark)) => {
+        Some((dark, light)) => {
             if variant.is_light() {
-                light.strip_prefix("(").expect("Opening prefix")
+                light.strip_suffix(")").expect("Closing suffix")
             } else {
-                dark.strip_suffix(")").expect("Closing suffix")
+                dark.strip_prefix("(").expect("Opening prefix")
             }
         }
         None => value,
@@ -156,19 +156,19 @@ mod tests {
 
     #[test]
     fn role_variation() {
-        assert_eq!(parse_capture_role("(love|rose)", Variant::Main), Role::Rose);
-        assert_eq!(parse_capture_role("(love|rose)", Variant::Moon), Role::Rose);
-        assert_eq!(parse_capture_role("(love|rose)", Variant::Dawn), Role::Love);
+        assert_eq!(parse_capture_role("(love|rose)", Variant::Main), Role::Love);
+        assert_eq!(parse_capture_role("(love|rose)", Variant::Moon), Role::Love);
+        assert_eq!(parse_capture_role("(love|rose)", Variant::Dawn), Role::Rose);
         assert_eq!(
-            replace_templates("$(foam|pine)", Variant::Main, &Config::default()),
+            replace_templates("$(pine|foam)", Variant::Main, &Config::default()),
             "#31748F"
         );
         assert_eq!(
-            replace_templates("$(love|rose):hex", Variant::Main, &Config::default()),
+            replace_templates("$(rose|love):hex", Variant::Main, &Config::default()),
             "#EBBCBA"
         );
         assert_eq!(
-            replace_templates("$(love|rose):hex", Variant::Dawn, &Config::default()),
+            replace_templates("$(rose|love):hex", Variant::Dawn, &Config::default()),
             "#B4637A"
         );
     }
