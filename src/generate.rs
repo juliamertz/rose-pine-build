@@ -8,6 +8,12 @@ use crate::{
     Config, Format,
 };
 
+pub struct Outputs {
+    pub main: String,
+    pub moon: String,
+    pub dawn: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct Generator {
     config: Config,
@@ -34,26 +40,13 @@ impl Generator {
         }
     }
 
-    // fn generate_variant(
-    //     &self,
-    //     variant: Variant,
-    //     captures: &[Match<'_>],
-    //     templates: &[Template],
-    //     text: &str,
-    // ) -> Result<String, ParseError> {
-    //     let mut buffer = text.to_owned();
-    //     for (index, template) in templates.reversed().iter().enumerate() {
-    //         let capture = captures
-    //             .get(index)
-    //             .expect("template to have capture at index");
-    //         buffer.gsub(
-    //             template.format_role(variant, &self.config),
-    //             capture.start(),
-    //             capture.end(),
-    //         );
-    //     }
-    //     Ok(buffer)
-    // }
+    pub fn generate_variants(&self, text: &str) -> Result<Outputs, ParseError> {
+        Ok(Outputs {
+            main: self.generate_variant(Variant::Main, text)?,
+            moon: self.generate_variant(Variant::Moon, text)?,
+            dawn: self.generate_variant(Variant::Dawn, text)?,
+        })
+    }
 
     pub fn generate_variant(&self, variant: Variant, text: &str) -> Result<String, ParseError> {
         let captures = self.pattern.find_iter(text).collect::<Vec<_>>();
@@ -61,7 +54,7 @@ impl Generator {
 
         for capture in captures.reversed() {
             let template = parse::parse_template(capture.as_str(), variant, &self.config)?;
-            buffer.gsub(
+            buffer.substitute(
                 template.format_role(variant, &self.config),
                 capture.start(),
                 capture.end(),

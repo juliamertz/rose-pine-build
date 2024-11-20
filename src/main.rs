@@ -27,6 +27,7 @@ fn main() {
     let config = Config::new(args.prefix, args.format);
 
     let out_dir = args.out_dir.unwrap_or("dist".into());
+    _ = std::fs::remove_dir_all(&out_dir);
     _ = std::fs::create_dir_all(&out_dir);
 
     let content = std::fs::read_to_string(&args.template_file).unwrap();
@@ -41,7 +42,8 @@ fn main() {
                 .template_file
                 .extension()
                 .map_or("".to_string(), |t| format!(".{}", t.to_string_lossy()));
-            let filename = out_dir.join(format!("{variant}{filetype}"));
+
+            let filename = out_dir.join(format!("{}{filetype}",variant.to_string().to_lowercase()));
 
             std::fs::write(filename, result).unwrap();
         } else {

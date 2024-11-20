@@ -15,11 +15,11 @@ pub(crate) fn rgb(r: f32, g: f32, b: f32) -> Rgb {
 }
 
 pub(crate) trait Substitutable {
-    fn gsub(&mut self, replacement: Self, start: usize, end: usize);
+    fn substitute(&mut self, replacement: Self, start: usize, end: usize);
 }
 
 impl Substitutable for String {
-    fn gsub(&mut self, replacement: Self, start: usize, end: usize) {
+    fn substitute(&mut self, replacement: Self, start: usize, end: usize) {
         let (before, after) = self.split_at(start);
         let (_, after_replace) = after.split_at(end - start);
         *self = format!("{}{}{}", before, replacement, after_replace)
