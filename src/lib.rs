@@ -11,33 +11,33 @@ use utils::ColorValues;
 
 #[derive(EnumString, VariantNames, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
-// TODO: Better example values
+
 pub enum Format {
-    /// Hex value with opacity last: 000000FF
+    /// ebbcbaff
     HexNs,
-    /// Hex value with opacity first: FF000000
+    /// ffebbcba 
     AhexNs,
-    /// rgb values delimited by spaces: 100 100 100
+    /// 235 188 186
     RgbNs,
-    /// semicolon delimited rgb values: 100;100;100
+    /// 235;188;186
     RgbAnsi,
-    /// Array of rgb values: []
+    /// [235, 188, 186]
     RgbArray,
-    /// CSS rgb function: rgb()
+    /// rgb(235, 188, 186)
     RgbFunction,
-    /// hsl values delimited by spaces: 100 100 100
+    /// 2 55% 83%
     HslNs,
-    /// Array of hsl values: []
+    /// [2, 55%, 83%]
     HslArray,
-    /// CSS Hsl function: hsl()
+    /// hsl(2, 55%, 83%)
     HslFunction,
-    /// Hex string with opacity last: #000000FF
+    /// #ebbcbaff
     Hex,
-    /// Hex string with opacity first: #FF000000
+    /// #ffebbcba
     Ahex,
-    /// Comma seperated rgb values: 100, 100, 100
+    /// 235, 188, 186
     Rgb,
-    /// Comma seperated hsl values: 100, 100, 100
+    /// 2, 55%, 83%
     Hsl,
 }
 

@@ -141,12 +141,20 @@ mod tests {
             "rgba(235, 111, 146, 0.5)"
         );
         assert_eq!(
+            replace_templates("$love:hsl_function/50", Variant::Moon, &Config::default()),
+            "hsla(343, 76%, 68%, 0.5%)"
+        );
+        assert_eq!(
             replace_templates("$love:hex/100", Variant::Moon, &Config::default()),
             "#EB6F92FF"
         );
         assert_eq!(
             replace_templates("$love:hex/0", Variant::Moon, &Config::default()),
             "#EB6F9200"
+        );
+        assert_eq!(
+            replace_templates("$love:ahex_ns/50", Variant::Moon, &Config::default()),
+            "80EB6F92"
         );
         assert_eq!(
             replace_templates("$love:ahex_ns/100", Variant::Moon, &Config::default()),
