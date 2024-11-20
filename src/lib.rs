@@ -81,7 +81,8 @@ impl Format {
             rgb_values(color)
         };
 
-        if let Some(alpha) = alpha {
+        if let Some(alpha) = alpha.map(|x| x / 100.0) {
+            dbg!(&alpha);
             match *self {
                 Self::Ahex | Self::AhexNs => chunks.insert(0, alpha * 255.0),
                 Self::Hex | Self::HexNs => chunks.push(alpha * 255.0),
