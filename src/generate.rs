@@ -1,10 +1,10 @@
-use std::str::FromStr;
-
 use regex::Regex;
+use std::str::FromStr;
 use strum::IntoEnumIterator;
 
 use crate::{
     colors::{Role, Variant},
+    utils::replace_substring,
     Config, Format,
 };
 
@@ -51,13 +51,6 @@ fn parse_capture(m: &regex::Match<'_>, variant: Variant, config: &Config) -> Cap
         end: m.end(),
         format,
     }
-}
-
-fn replace_substring(text: &str, start: usize, end: usize, replacement: &str) -> String {
-    let (before, after) = text.split_at(start);
-    let (_, after_replace) = after.split_at(end - start);
-
-    format!("{}{}{}", before, replacement, after_replace)
 }
 
 pub fn replace_templates(text: &str, variant: Variant, config: &Config) -> String {

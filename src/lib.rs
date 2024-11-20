@@ -1,5 +1,6 @@
 pub mod colors;
 pub mod generate;
+mod utils;
 
 use colors_transform::{AlphaColor, Color, Rgb};
 use std::char;

@@ -44,6 +44,7 @@ impl Variant {
     }
 
     pub fn get_color(&self, role: Role) -> Rgb {
+        use crate::utils::rgb;
         match self {
             Variant::Main => match role {
                 Role::Base => rgb(25.0, 23.0, 36.0),
@@ -98,8 +99,4 @@ impl Variant {
             },
         }
     }
-}
-
-fn rgb(r: f32, g: f32, b: f32) -> Rgb {
-    Rgb::from(r, g, b)
 }
