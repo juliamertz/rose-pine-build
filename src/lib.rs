@@ -16,7 +16,7 @@ pub enum Format {
     HslNs,
     HslArray,
     HslFunction,
-    // It's important these come last for regex matching
+    // It's important these come last so that they won't be matched before other formats
     Hex,
     Rgb,
     Hsl,
@@ -86,7 +86,8 @@ impl Format {
     fn format_chunks(&self, chunks: &[f32]) -> String {
         let chunks = chunks
             .iter()
-            .map(|x| self.format_chunk(*x))
+            .enumerate()
+            .map(|(i, x)| self.format_chunk(*x, i))
             .collect::<Vec<_>>();
         match self {
             Self::Hex | Self::HexNs => chunks.join(""),
@@ -101,7 +102,11 @@ impl Format {
         }
     }
 
-    fn format_chunk(&self, chunk: f32) -> String {
+    fn format_chunk(&self, chunk: f32, i: usize) -> String {
+        if self.is_hsl() && (i > 0) {
+            return format!("{chunk}%");
+        }
+
         match self {
             Self::Hex | Self::HexNs => format!("{:02X}", chunk.round() as u8),
             _ => chunk.to_string(),
