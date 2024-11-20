@@ -1,6 +1,7 @@
 pub mod generate;
 pub mod palette;
 
+mod parse;
 mod utils;
 
 use clap::ValueEnum;
@@ -12,9 +13,17 @@ use utils::ColorValues;
 #[derive(EnumString, VariantNames, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
 pub enum Format {
+    /// #ebbcbaff
+    Hex,
+    /// #ffebbcba
+    Ahex,
+    /// 235, 188, 186
+    Rgb,
+    /// 2, 55%, 83%
+    Hsl,
     /// ebbcbaff
     HexNs,
-    /// ffebbcba 
+    /// ffebbcba
     AhexNs,
     /// 235 188 186
     RgbNs,
@@ -30,14 +39,6 @@ pub enum Format {
     HslArray,
     /// hsl(2, 55%, 83%)
     HslFunction,
-    /// #ebbcbaff
-    Hex,
-    /// #ffebbcba
-    Ahex,
-    /// 235, 188, 186
-    Rgb,
-    /// 2, 55%, 83%
-    Hsl,
 }
 
 pub struct Config {
