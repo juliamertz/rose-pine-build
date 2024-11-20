@@ -41,6 +41,7 @@ pub enum Format {
     HslFunction,
 }
 
+#[derive(Clone, Debug)]
 pub struct Config {
     pub prefix: char,
     pub format: Format,

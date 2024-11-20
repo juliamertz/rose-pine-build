@@ -1,11 +1,7 @@
 use std::{io::Write, path::PathBuf};
 
 use clap::Parser;
-use rosepine_build::{
-    generate::{self, Generator},
-    palette::Variant,
-    Config, Format,
-};
+use rosepine_build::{generate::Generator, palette::Variant, Config, Format};
 use strum::IntoEnumIterator;
 
 #[derive(Parser)]
@@ -37,7 +33,9 @@ fn main() {
     let generator = Generator::new(config);
 
     for variant in Variant::iter() {
-        let result = generator.generate_variant(variant, &content);
+        let result = generator
+            .generate_variant(variant, &content)
+            .expect("valid generation");
         if args.write {
             let filetype = args
                 .template_file
