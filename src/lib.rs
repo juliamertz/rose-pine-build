@@ -3,23 +3,40 @@ pub mod palette;
 
 mod utils;
 
+use clap::ValueEnum;
 use colors_transform::{AlphaColor, Color, Rgb};
 use std::char;
-use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
+use strum_macros::{Display, EnumString, VariantNames};
 
-#[derive(EnumString, EnumIter, AsRefStr, Display, Debug, clap::ValueEnum, Clone, Copy)]
+#[derive(EnumString, VariantNames, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
+// TODO: Better example values
 pub enum Format {
+    /// Hex value with opacity last: 000000FF
     HexNs,
+    /// Hex value with opacity first: FF000000
+    AhexNs,
+    /// rgb values delimited by spaces: 100 100 100
     RgbNs,
+    /// semicolon delimited rgb values: 100;100;100
     RgbAnsi,
+    /// Array of rgb values: []
     RgbArray,
+    /// CSS rgb function: rgb()
     RgbFunction,
+    /// hsl values delimited by spaces: 100 100 100
     HslNs,
+    /// Array of hsl values: []
     HslArray,
+    /// CSS Hsl function: hsl()
     HslFunction,
+    /// Hex string with opacity last: #000000FF
     Hex,
+    /// Hex string with opacity first: #FF000000
+    Ahex,
+    /// Comma seperated rgb values: 100, 100, 100
     Rgb,
+    /// Comma seperated hsl values: 100, 100, 100
     Hsl,
 }
 
@@ -64,15 +81,23 @@ impl Format {
             rgb_values(color)
         };
         if alpha {
-            chunks.push(color.get_alpha());
+            match *self {
+                Self::Ahex | Self::AhexNs => chunks.insert(0, color.get_alpha() * 255.0),
+                Self::Hex | Self::HexNs => chunks.push(color.get_alpha() * 255.0),
+                _ => chunks.push(color.get_alpha()),
+            }
         }
 
         let chunks = self.format_chunks(&chunks);
         match self {
-            Self::Hex => format!("#{chunks}"),
-            Self::Rgb | Self::Hsl | Self::RgbNs | Self::HslNs | Self::HexNs | Self::RgbAnsi => {
-                chunks
-            }
+            Self::Hex | Self::Ahex => format!("#{chunks}"),
+            Self::Rgb
+            | Self::Hsl
+            | Self::RgbNs
+            | Self::HslNs
+            | Self::HexNs
+            | Self::AhexNs
+            | Self::RgbAnsi => chunks,
             Self::RgbArray | Self::HslArray => format!("[{chunks}]"),
             Self::RgbFunction | Self::HslFunction => {
                 let fn_name = match self {
@@ -96,7 +121,7 @@ impl Format {
             .map(|(i, x)| self.format_chunk(*x, i))
             .collect::<Vec<_>>();
         match self {
-            Self::Hex | Self::HexNs => chunks.join(""),
+            Self::Hex | Self::HexNs | Self::Ahex | Self::AhexNs => chunks.join(""),
             Self::Rgb
             | Self::RgbArray
             | Self::RgbFunction
@@ -114,7 +139,9 @@ impl Format {
         }
 
         match self {
-            Self::Hex | Self::HexNs => format!("{:02X}", chunk.round() as u8),
+            Self::Hex | Self::HexNs | Self::Ahex | Self::AhexNs => {
+                format!("{:02X}", chunk.round() as u8)
+            }
             _ => chunk.to_string(),
         }
     }

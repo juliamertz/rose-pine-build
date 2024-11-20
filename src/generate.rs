@@ -1,6 +1,7 @@
+use colors_transform::AlphaColor;
 use regex::Regex;
 use std::str::FromStr;
-use strum::IntoEnumIterator;
+use strum::VariantNames;
 
 use crate::{
     palette::{Role, Variant},
@@ -12,8 +13,24 @@ use crate::{
 struct Capture {
     role: Role,
     format: Option<Format>,
+    opacity: Option<u16>,
     start: usize,
     end: usize,
+}
+
+impl Capture {
+    fn format_role(&self, variant: Variant, config: &Config) -> String {
+        let mut color = self.role.get_color(variant);
+        if let Some(opacity) = self.opacity {
+            color = color.set_alpha((opacity as f32) / 100.0)
+        }
+        let format = match self.format {
+            Some(ref format) => format,
+            None => &config.format,
+        };
+
+        format.to_color_string(color, self.opacity.is_some())
+    }
 }
 
 fn parse_capture_role(value: &str, variant: Variant) -> Role {
@@ -37,7 +54,11 @@ fn parse_capture(m: &regex::Match<'_>, variant: Variant, config: &Config) -> Cap
         .strip_prefix(config.prefix)
         .expect("capture to start with configured prefix");
 
-    let (role, format) = match result.split_once(":") {
+    let (ident, opacity) = match result.split_once("/") {
+        Some((format, opacity)) => (format, opacity.parse::<u16>().ok()),
+        None => (result, None),
+    };
+    let (role, format) = match ident.split_once(":") {
         Some((role, format)) => (
             role,
             Some(Format::from_str(format.trim()).expect("valid format name")),
@@ -47,6 +68,7 @@ fn parse_capture(m: &regex::Match<'_>, variant: Variant, config: &Config) -> Cap
 
     Capture {
         role: parse_capture_role(role, variant),
+        opacity,
         start: m.start(),
         end: m.end(),
         format,
@@ -56,18 +78,12 @@ fn parse_capture(m: &regex::Match<'_>, variant: Variant, config: &Config) -> Cap
 pub fn replace_templates(text: &str, variant: Variant, config: &Config) -> String {
     let mut buffer = text.to_owned();
 
-    let roles = Role::iter()
-        .map(|x| x.to_string())
-        .collect::<Vec<_>>()
-        .join("|");
-    let formats = Format::iter()
-        .map(|x| x.to_string())
-        .collect::<Vec<_>>()
-        .join("|");
+    let roles = Role::VARIANTS.join("|");
+    let formats = Format::VARIANTS.join("|");
 
     let pattern = format!(
         // this should be considered a crime
-        r#"\{}(({roles})|(\(({roles})\|({roles}))\))(:({formats}))?"#,
+        r#"\{}(({roles})|(\(({roles})\|({roles}))\))(:({formats}))?(\/\d{{1,3}})?"#,
         config.prefix,
     );
 
@@ -79,13 +95,7 @@ pub fn replace_templates(text: &str, variant: Variant, config: &Config) -> Strin
         .rev()
         .for_each(|m| {
             let capture = parse_capture(m, variant, config);
-            let format = match capture.format {
-                Some(ref format) => format,
-                None => &config.format,
-            };
-
-            let color = capture.role.get_color(variant);
-            let formatted_color = format.to_color_string(color, false);
+            let formatted_color = capture.format_role(variant, config);
             buffer = replace_substring(&buffer, capture.start, capture.end, &formatted_color);
         });
 
@@ -121,6 +131,26 @@ mod tests {
         assert_eq!(
             replace_templates("$love:hsl_function", Variant::Moon, &Config::default()),
             "hsl(343, 76%, 68%)"
+        );
+    }
+
+    #[test]
+    fn opacity() {
+        assert_eq!(
+            replace_templates("$love:rgb_function/50", Variant::Moon, &Config::default()),
+            "rgba(235, 111, 146, 0.5)"
+        );
+        assert_eq!(
+            replace_templates("$love:hex/100", Variant::Moon, &Config::default()),
+            "#EB6F92FF"
+        );
+        assert_eq!(
+            replace_templates("$love:hex/0", Variant::Moon, &Config::default()),
+            "#EB6F9200"
+        );
+        assert_eq!(
+            replace_templates("$love:ahex_ns/100", Variant::Moon, &Config::default()),
+            "FFEB6F92"
         );
     }
 

@@ -1,14 +1,14 @@
 use colors_transform::Rgb;
-use strum_macros::{Display, EnumIter, EnumString};
+use strum_macros::{Display, EnumIter, EnumString, VariantNames};
 
-#[derive(Debug, Clone, Copy, EnumString, Display, EnumIter, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString)]
 pub enum Variant {
     Main,
     Moon,
     Dawn,
 }
 
-#[derive(Debug, Clone, Copy, EnumString, Display, EnumIter, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString)]
 #[strum(serialize_all = "camelCase")]
 pub enum Role {
     Base,
