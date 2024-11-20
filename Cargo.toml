@@ -6,6 +6,6 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.21", default-features = false, features = ["derive", "std", "help", "usage"] }
 colors-transform = "0.2.11"
-regex = "1.11.1"
+regex = { version = "1.11.1", default-features = false, features = ["std", "perf", "unicode-perl"] }
 strum = "0.26.3"
 strum_macros = "0.26.4"

@@ -23,19 +23,19 @@ impl Template {
     }
 }
 
-pub fn parse_template_role(value: &str, variant: Variant) -> Result<Role, strum::ParseError> {
+pub fn parse_template_role(value: &str, variant: Variant) -> Result<Role, ParseError> {
     let role_name = match value.split_once("|") {
         Some((dark, light)) => {
             if variant.is_light() {
-                light.strip_suffix(")").expect("Closing suffix")
+                light.strip_suffix(")").ok_or(ParseError::CloseParenExpected)?
             } else {
-                dark.strip_prefix("(").expect("Opening prefix")
+                dark.strip_prefix("(").ok_or(ParseError::OpenParenExpected)?
             }
         }
         None => value,
     };
 
-    Role::from_str(role_name.trim())
+    Role::from_str(role_name.trim()).map_err(|_| ParseError::RoleNotFound)
 }
 
 #[derive(Debug)]
@@ -43,6 +43,8 @@ pub enum ParseError {
     RoleNotFound,
     FormatNotFound,
     PrefixExpected,
+    OpenParenExpected,  
+    CloseParenExpected,  
     InvalidOpacity(ParseFloatError),
 }
 

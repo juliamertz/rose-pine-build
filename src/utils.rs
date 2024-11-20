@@ -26,19 +26,6 @@ impl Substitutable for String {
     }
 }
 
-// impl Substitutable for Vec<u8> {
-//     fn gsub(&mut self, replacement: Self, start: usize, end: usize) {
-//         // let mut result = self.clone();
-//         for (i, c) in replacement.iter().enumerate() {
-//             if i > end - 1 {
-//                 self.insert(start + i, *c);
-//             } else {
-//                 self[start + i] = *c;
-//             }
-//         }
-//     }
-// }
-
 pub(crate) trait ColorValues {
     fn color_values(&self) -> Vec<f32>;
 }

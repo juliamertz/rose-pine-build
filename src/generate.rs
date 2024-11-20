@@ -10,7 +10,7 @@ use crate::{
     Config, Format,
 };
 
-/// HashMap containing generation output strings for each variant
+/// HashMap containing output strings for each variant
 pub type Outputs = HashMap<Variant, String>;
 
 #[derive(Clone, Debug)]
@@ -81,6 +81,14 @@ mod tests {
         assert_eq!(
             generate_variant(Variant::Moon, "$love:rgb")?,
             "235, 111, 146"
+        );
+        assert_eq!(
+            generate_variant(Variant::Moon, "$love:rgb_function")?,
+            "rgb(235, 111, 146)"
+        );
+        assert_eq!(
+            generate_variant(Variant::Moon, "$pine:rgb_function/80")?,
+            "rgba(62, 143, 176, 0.8)"
         );
         Ok(())
     }
