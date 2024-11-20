@@ -6,7 +6,7 @@ use colors_transform::{AlphaColor, Color, Rgb};
 use std::char;
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
-#[derive(EnumString, EnumIter, AsRefStr, Display, Debug)]
+#[derive(EnumString, EnumIter, AsRefStr, Display, Debug, clap::ValueEnum, Clone, Copy)]
 #[strum(serialize_all = "snake_case")]
 pub enum Format {
     HexNs,
@@ -26,6 +26,12 @@ pub enum Format {
 pub struct Config {
     pub prefix: char,
     pub format: Format,
+}
+
+impl Config {
+    pub fn new(prefix: char, format: Format) -> Self {
+        Self { prefix, format }
+    }
 }
 
 impl Default for Config {

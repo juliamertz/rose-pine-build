@@ -1,7 +1,7 @@
 use std::{io::Write, path::PathBuf};
 
 use clap::Parser;
-use rosepine_build::{colors::Variant, generate, Config};
+use rosepine_build::{colors::Variant, generate, Config, Format};
 use strum::IntoEnumIterator;
 
 #[derive(Parser)]
@@ -13,11 +13,18 @@ struct Args {
     #[clap(long, short)]
     out_dir: Option<PathBuf>,
 
+    #[clap(long, short, default_value = "hex")]
+    format: Format,
+
+    #[clap(long, short, default_value = "$")]
+    prefix: char,
+
     template_file: PathBuf,
 }
 
 fn main() {
     let args = Args::parse();
+    let config = Config::new(args.prefix, args.format);
 
     let out_dir = args.out_dir.unwrap_or("dist".into());
     _ = std::fs::create_dir_all(&out_dir);
@@ -25,7 +32,7 @@ fn main() {
     let content = std::fs::read_to_string(&args.template_file).unwrap();
 
     for variant in Variant::iter() {
-        let result = generate::replace_templates(&content, variant, &Config::default());
+        let result = generate::replace_templates(&content, variant, &config);
         if args.write {
             let filetype = args
                 .template_file
