@@ -1,80 +1,117 @@
 pub mod colors;
+pub mod generate;
 
+use colors_transform::{AlphaColor, Color, Rgb};
 use std::char;
+use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
-use palette::{
-    rgb::Rgb, Alpha, FromColor, GetHue, Hsl, Hsla, IntoColor, Lch, LinSrgba, Srgb, Srgba,
-};
-use strum_macros::{AsRefStr, Display, EnumString};
-
-#[derive(EnumString, AsRefStr, Display, Debug)]
-#[strum(serialize_all = "kebab-case")]
+#[derive(EnumString, EnumIter, AsRefStr, Display, Debug)]
+#[strum(serialize_all = "snake_case")]
 pub enum Format {
-    Hex,
     HexNs,
-    Rgb,
     RgbNs,
     RgbAnsi,
     RgbArray,
     RgbFunction,
-    Hsl,
     HslNs,
     HslArray,
     HslFunction,
+    // It's important these come last for regex matching
+    Hex,
+    Rgb,
+    Hsl,
 }
 
 pub struct Config {
     pub prefix: char,
+    pub format: Format,
 }
 
-// FIX: HSL values are wrong
-// rgb(200, 10, 50)
-// hsl(347.3684, 0%, 1%)
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            prefix: '$',
+            format: Format::Hex,
+        }
+    }
+}
 
-// fn hsl_values(color: Srgba) -> (f32, f32, f32) {
-//     let h: Hsla = color.into_color();
-//     (h.hue.into_positive_degrees(), h.saturation, h.lightness)
-// }
+fn rgb_values(color: Rgb) -> Vec<f32> {
+    vec![color.get_red(), color.get_green(), color.get_blue()]
+}
+
+fn hsl_values(color: Rgb) -> Vec<f32> {
+    let color = color.to_hsl();
+    vec![
+        color.get_hue().round(),
+        color.get_saturation().round(),
+        color.get_lightness().round(),
+    ]
+}
 
 impl Format {
-    pub fn to_string(&self, color: Srgb<u8>) -> String {
-        let (red, green, blue) = (color.red, color.green, color.blue);
-        // let (hue, saturation, lightness) = hsl_values(color);
+    pub fn to_color_string(&self, color: Rgb, alpha: bool) -> String {
+        let mut chunks = if self.is_hsl() {
+            hsl_values(color)
+        } else {
+            rgb_values(color)
+        };
+        dbg!(&chunks);
+        if alpha {
+            chunks.push(color.get_alpha());
+        }
 
+        let chunks = self.format_chunks(&chunks);
         match self {
-            Self::Hex => format!("#{:02X}{:02X}{:02X}", red, green, blue),
-            Self::HexNs => format!("{:02X}{:02X}{:02X}", red, green, blue),
-            Self::Rgb => format!("{}, {}, {}", red, green, blue),
-            Self::RgbNs => format!("{} {} {}", red, green, blue),
-            Self::RgbAnsi => format!("{};{};{}", red, green, blue),
-            Self::RgbArray => format!("[{}, {}, {}]", red, green, blue),
-            Self::RgbFunction => format!("rgb({}, {}, {})", red, green, blue),
-            // Self::Hsl => format!("{}, {}%, {}%", hue, saturation, lightness),
-            // Self::HslNs => format!("{} {}% {}%", hue, saturation, lightness),
-            // Self::HslArray => format!("[{}, {}%, {}%]", hue, saturation, lightness),
-            // Self::HslFunction => format!("hsl({}, {}%, {}%)", hue, saturation, lightness),
-            _ => unimplemented!(),
+            Self::Hex => format!("#{chunks}"),
+            Self::Rgb | Self::Hsl | Self::RgbNs | Self::HslNs | Self::HexNs | Self::RgbAnsi => {
+                chunks
+            }
+            Self::RgbArray | Self::HslArray => format!("[{chunks}]"),
+            Self::RgbFunction | Self::HslFunction => {
+                let fn_name = match self {
+                    Self::RgbFunction => "rgb",
+                    Self::HslFunction => "hsl",
+                    _ => unreachable!(),
+                };
+                let fn_name = match alpha {
+                    true => &format!("{fn_name}a"),
+                    false => fn_name,
+                };
+                format!("{fn_name}({chunks})")
+            }
         }
     }
 
-    pub fn to_alpha_string(&self, color: Alpha<Rgb<Srgb,u8>, f32>) -> String {
-        let (red, green, blue) = (color.red, color.green, color.blue);
-        let alpha: u8 = (color.alpha * 255.0).round() as u8;
-        // let (hue, saturation, lightness) = hsl_values(color);
-
+    fn format_chunks(&self, chunks: &[f32]) -> String {
+        let chunks = chunks
+            .iter()
+            .map(|x| self.format_chunk(*x))
+            .collect::<Vec<_>>();
         match self {
-            Self::Hex => format!("#{:02X}{:02X}{:02X}{:02X}", red, green, blue, alpha),
-            Self::HexNs => format!("{:02X}{:02X}{:02X}{:02X}", red, green, blue, alpha),
-            Self::Rgb => format!("{}, {}, {}, {}", red, green, blue, alpha),
-            Self::RgbNs => format!("{} {} {} {}", red, green, blue, alpha),
-            Self::RgbAnsi => format!("{};{};{};{}", red, green, blue, alpha),
-            Self::RgbArray => format!("[{}, {}, {}, {}]", red, green, blue, alpha),
-            Self::RgbFunction => format!("rgb({}, {}, {}, {})", red, green, blue, alpha),
-            // Self::Hsl => format!("{}, {}%, {}%", hue, saturation, lightness),
-            // Self::HslNs => format!("{} {}% {}%", hue, saturation, lightness),
-            // Self::HslArray => format!("[{}, {}%, {}%]", hue, saturation, lightness),
-            // Self::HslFunction => format!("hsl({}, {}%, {}%)", hue, saturation, lightness),
-            _ => unimplemented!(),
+            Self::Hex | Self::HexNs => chunks.join(""),
+            Self::Rgb
+            | Self::RgbArray
+            | Self::RgbFunction
+            | Self::Hsl
+            | Self::HslArray
+            | Self::HslFunction => chunks.join(", "),
+            Self::RgbNs | Self::HslNs => chunks.join(" "),
+            Self::RgbAnsi => chunks.join(";"),
         }
+    }
+
+    fn format_chunk(&self, chunk: f32) -> String {
+        match self {
+            Self::Hex | Self::HexNs => format!("{:02X}", chunk.round() as u8),
+            _ => chunk.to_string(),
+        }
+    }
+
+    fn is_hsl(&self) -> bool {
+        matches!(
+            self,
+            Self::Hsl | Self::HslNs | Self::HslArray | Self::HslFunction
+        )
     }
 }
