@@ -13,9 +13,9 @@ use utils::ColorValues;
 #[derive(EnumString, VariantNames, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
 pub enum Format {
-    /// #ebbcbaff
+    /// #ebbcba | #ebbcbaff
     Hex,
-    /// #ffebbcba
+    /// #ebbcba | #ffebbcba
     Ahex,
     /// 235, 188, 186
     Rgb,
@@ -111,7 +111,7 @@ impl Format {
             .map(|(i, x)| self.format_chunk(*x, i))
             .collect::<Vec<_>>();
         match self {
-            Self::Hex | Self::HexNs | Self::Ahex | Self::AhexNs => chunks.join(""),
+            Self::Hex | Self::HexNs | Self::Ahex | Self::AhexNs => chunks.join("").to_lowercase(),
             Self::Rgb
             | Self::RgbArray
             | Self::RgbFunction
