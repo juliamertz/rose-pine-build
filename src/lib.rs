@@ -11,7 +11,6 @@ use utils::ColorValues;
 
 #[derive(EnumString, VariantNames, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
-
 pub enum Format {
     /// ebbcbaff
     HexNs,
@@ -68,7 +67,7 @@ impl Format {
             false => color.color_values(),
         };
 
-        if let Some(alpha) = alpha.map(|x| x / 100.0) {
+        if let Some(alpha) = alpha {
             dbg!(&alpha);
             match *self {
                 Self::Ahex | Self::AhexNs => chunks.insert(0, alpha * 255.0),

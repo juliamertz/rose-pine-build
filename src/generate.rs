@@ -1,6 +1,6 @@
 use colors_transform::AlphaColor;
 use regex::Regex;
-use std::str::FromStr;
+use std::{num::ParseFloatError, str::FromStr};
 use strum::VariantNames;
 
 use crate::{
@@ -9,16 +9,14 @@ use crate::{
     Config, Format,
 };
 
-#[derive(Debug)]
-struct Capture {
+#[derive(Debug, PartialEq)]
+struct Template {
     role: Role,
     format: Option<Format>,
     opacity: Option<f32>,
-    start: usize,
-    end: usize,
 }
 
-impl Capture {
+impl Template {
     fn format_role(&self, variant: Variant, config: &Config) -> String {
         let mut color = self.role.get_color(variant);
         if let Some(opacity) = self.opacity {
@@ -33,7 +31,7 @@ impl Capture {
     }
 }
 
-fn parse_capture_role(value: &str, variant: Variant) -> Role {
+fn parse_template_role(value: &str, variant: Variant) -> Result<Role, strum::ParseError> {
     let role_name = match value.split_once("|") {
         Some((dark, light)) => {
             if variant.is_light() {
@@ -45,34 +43,48 @@ fn parse_capture_role(value: &str, variant: Variant) -> Role {
         None => value,
     };
 
-    Role::from_str(role_name.trim()).expect("valid role name")
+    Role::from_str(role_name.trim())
 }
 
-fn parse_capture(m: &regex::Match<'_>, variant: Variant, config: &Config) -> Capture {
-    let capture = m
-        .as_str()
-        .strip_prefix(config.prefix)
-        .expect("capture to start with configured prefix");
+#[derive(Debug)]
+pub enum ParseError {
+    RoleNotFound,
+    FormatNotFound,
+    PrefixExpected,
+    InvalidOpacity(ParseFloatError),
+}
 
-    let (capture, opacity) = match capture.split_once("/") {
-        Some((format, opacity)) => (format, opacity.parse::<f32>().ok()),
-        None => (capture, None),
-    };
-    let (role, format) = match capture.split_once(":") {
-        Some((role, format)) => (
-            role,
-            Some(Format::from_str(format.trim()).expect("valid format name")),
-        ),
-        None => (capture, None),
+fn parse_template(value: &str, variant: Variant, config: &Config) -> Result<Template, ParseError> {
+    let value = match value.strip_prefix(config.prefix) {
+        Some(value) => value,
+        None => return Err(ParseError::PrefixExpected),
     };
 
-    Capture {
-        role: parse_capture_role(role, variant),
+    let (value, opacity) = match value.split_once("/") {
+        Some((value, opacity)) => {
+            let opacity = opacity
+                .parse::<f32>()
+                .map(|x| x / 100.0)
+                .map_err(ParseError::InvalidOpacity)?;
+
+            (value, Some(opacity))
+        }
+        None => (value, None),
+    };
+
+    let (role, format) = match value.split_once(":") {
+        Some((role, format)) => {
+            let format = Format::from_str(format.trim()).map_err(|_| ParseError::FormatNotFound)?;
+            (role, Some(format))
+        }
+        None => (value, None),
+    };
+
+    Ok(Template {
+        role: parse_template_role(role, variant).map_err(|_| ParseError::RoleNotFound)?,
         opacity,
-        start: m.start(),
-        end: m.end(),
         format,
-    }
+    })
 }
 
 pub fn replace_templates(text: &str, variant: Variant, config: &Config) -> String {
@@ -94,9 +106,16 @@ pub fn replace_templates(text: &str, variant: Variant, config: &Config) -> Strin
         .iter()
         .rev()
         .for_each(|m| {
-            let capture = parse_capture(m, variant, config);
-            let formatted_color = capture.format_role(variant, config);
-            buffer = replace_substring(&buffer, capture.start, capture.end, &formatted_color);
+            let template = match parse_template(m.as_str(), variant, config) {
+                Ok(template) => template,
+                Err(err) => {
+                    eprintln!("unable to parse template, error: {err:?}");
+                    return;
+                }
+            };
+
+            let formatted_color = template.format_role(variant, config);
+            buffer = replace_substring(&buffer, m.start(), m.end(), &formatted_color);
         });
 
     buffer
@@ -105,6 +124,33 @@ pub fn replace_templates(text: &str, variant: Variant, config: &Config) -> Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn template_parsing() -> Result<(), ParseError> {
+        let config = &Config::default();
+        assert_eq!(
+            parse_template("$base:rgb", Variant::Main, config)?,
+            Template::new(Role::Base, Some(Format::Rgb), None)
+        );
+        assert_eq!(
+            parse_template("$surface:hsl", Variant::Main, config)?,
+            Template::new(Role::Surface, Some(Format::Hsl), None)
+        );
+        assert_eq!(
+            parse_template("$highlightMed:ahex_ns/80", Variant::Main, config)?,
+            Template::new(Role::HighlightMed, Some(Format::AhexNs), Some(0.8))
+        );
+        assert_eq!(
+            parse_template("$(foam|pine):hex", Variant::Main, config)?,
+            Template::new(Role::Foam, Some(Format::Hex), None)
+        );
+        assert_eq!(
+            parse_template("$(foam|pine):hex", Variant::Dawn, config)?,
+            Template::new(Role::Pine, Some(Format::Hex), None)
+        );
+
+        Ok(())
+    }
 
     #[test]
     fn format_rgb() {
@@ -163,10 +209,19 @@ mod tests {
     }
 
     #[test]
-    fn role_variation() {
-        assert_eq!(parse_capture_role("(love|rose)", Variant::Main), Role::Love);
-        assert_eq!(parse_capture_role("(love|rose)", Variant::Moon), Role::Love);
-        assert_eq!(parse_capture_role("(love|rose)", Variant::Dawn), Role::Rose);
+    fn role_variation() -> Result<(), strum::ParseError> {
+        assert_eq!(
+            parse_template_role("(love|rose)", Variant::Main)?,
+            Role::Love
+        );
+        assert_eq!(
+            parse_template_role("(love|rose)", Variant::Moon)?,
+            Role::Love
+        );
+        assert_eq!(
+            parse_template_role("(love|rose)", Variant::Dawn)?,
+            Role::Rose
+        );
         assert_eq!(
             replace_templates("$(pine|foam)", Variant::Main, &Config::default()),
             "#31748F"
@@ -179,5 +234,17 @@ mod tests {
             replace_templates("$(rose|love):hex", Variant::Dawn, &Config::default()),
             "#B4637A"
         );
+
+        Ok(())
+    }
+
+    impl Template {
+        fn new(role: Role, format: Option<Format>, opacity: Option<f32>) -> Self {
+            Self {
+                role,
+                format,
+                opacity,
+            }
+        }
     }
 }
