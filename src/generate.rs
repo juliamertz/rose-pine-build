@@ -49,21 +49,21 @@ fn parse_capture_role(value: &str, variant: Variant) -> Role {
 }
 
 fn parse_capture(m: &regex::Match<'_>, variant: Variant, config: &Config) -> Capture {
-    let result = m
+    let capture = m
         .as_str()
         .strip_prefix(config.prefix)
         .expect("capture to start with configured prefix");
 
-    let (ident, opacity) = match result.split_once("/") {
+    let (capture, opacity) = match capture.split_once("/") {
         Some((format, opacity)) => (format, opacity.parse::<f32>().ok()),
-        None => (result, None),
+        None => (capture, None),
     };
-    let (role, format) = match ident.split_once(":") {
+    let (role, format) = match capture.split_once(":") {
         Some((role, format)) => (
             role,
             Some(Format::from_str(format.trim()).expect("valid format name")),
         ),
-        None => (result, None),
+        None => (capture, None),
     };
 
     Capture {

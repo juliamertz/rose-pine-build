@@ -7,6 +7,7 @@ use clap::ValueEnum;
 use colors_transform::{Color, Rgb};
 use std::char;
 use strum_macros::{Display, EnumString, VariantNames};
+use utils::ColorValues;
 
 #[derive(EnumString, VariantNames, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
@@ -60,25 +61,11 @@ impl Default for Config {
     }
 }
 
-fn rgb_values(color: Rgb) -> Vec<f32> {
-    vec![color.get_red(), color.get_green(), color.get_blue()]
-}
-
-fn hsl_values(color: Rgb) -> Vec<f32> {
-    let color = color.to_hsl();
-    vec![
-        color.get_hue().round(),
-        color.get_saturation().round(),
-        color.get_lightness().round(),
-    ]
-}
-
 impl Format {
     pub fn format_color(&self, color: Rgb, alpha: Option<f32>) -> String {
-        let mut chunks = if self.is_hsl() {
-            hsl_values(color)
-        } else {
-            rgb_values(color)
+        let mut chunks = match self.is_hsl() {
+            true => color.to_hsl().color_values(),
+            false => color.color_values(),
         };
 
         if let Some(alpha) = alpha.map(|x| x / 100.0) {
