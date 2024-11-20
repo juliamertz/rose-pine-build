@@ -4,7 +4,7 @@ pub mod palette;
 mod utils;
 
 use clap::ValueEnum;
-use colors_transform::{AlphaColor, Color, Rgb};
+use colors_transform::{Color, Rgb};
 use std::char;
 use strum_macros::{Display, EnumString, VariantNames};
 
@@ -74,17 +74,18 @@ fn hsl_values(color: Rgb) -> Vec<f32> {
 }
 
 impl Format {
-    pub fn to_color_string(&self, color: Rgb, alpha: bool) -> String {
+    pub fn format_color(&self, color: Rgb, alpha: Option<f32>) -> String {
         let mut chunks = if self.is_hsl() {
             hsl_values(color)
         } else {
             rgb_values(color)
         };
-        if alpha {
+
+        if let Some(alpha) = alpha {
             match *self {
-                Self::Ahex | Self::AhexNs => chunks.insert(0, color.get_alpha() * 255.0),
-                Self::Hex | Self::HexNs => chunks.push(color.get_alpha() * 255.0),
-                _ => chunks.push(color.get_alpha()),
+                Self::Ahex | Self::AhexNs => chunks.insert(0, alpha * 255.0),
+                Self::Hex | Self::HexNs => chunks.push(alpha * 255.0),
+                _ => chunks.push(alpha),
             }
         }
 
@@ -105,7 +106,7 @@ impl Format {
                     Self::HslFunction => "hsl",
                     _ => unreachable!(),
                 };
-                let fn_name = match alpha {
+                let fn_name = match alpha.is_some() {
                     true => &format!("{fn_name}a"),
                     false => fn_name,
                 };

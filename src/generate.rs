@@ -13,7 +13,7 @@ use crate::{
 struct Capture {
     role: Role,
     format: Option<Format>,
-    opacity: Option<u16>,
+    opacity: Option<f32>,
     start: usize,
     end: usize,
 }
@@ -22,14 +22,14 @@ impl Capture {
     fn format_role(&self, variant: Variant, config: &Config) -> String {
         let mut color = self.role.get_color(variant);
         if let Some(opacity) = self.opacity {
-            color = color.set_alpha((opacity as f32) / 100.0)
+            color = color.set_alpha(opacity / 100.0)
         }
         let format = match self.format {
             Some(ref format) => format,
             None => &config.format,
         };
 
-        format.to_color_string(color, self.opacity.is_some())
+        format.format_color(color, self.opacity)
     }
 }
 
@@ -55,7 +55,7 @@ fn parse_capture(m: &regex::Match<'_>, variant: Variant, config: &Config) -> Cap
         .expect("capture to start with configured prefix");
 
     let (ident, opacity) = match result.split_once("/") {
-        Some((format, opacity)) => (format, opacity.parse::<u16>().ok()),
+        Some((format, opacity)) => (format, opacity.parse::<f32>().ok()),
         None => (result, None),
     };
     let (role, format) = match ident.split_once(":") {
