@@ -2,6 +2,13 @@ use colors_transform::Rgb;
 use strum_macros::{Display, EnumIter, EnumString};
 
 #[derive(Debug, Clone, Copy, EnumString, Display, EnumIter, PartialEq, Eq)]
+pub enum Variant {
+    Main,
+    Moon,
+    Dawn,
+}
+
+#[derive(Debug, Clone, Copy, EnumString, Display, EnumIter, PartialEq, Eq)]
 #[strum(serialize_all = "camelCase")]
 pub enum Role {
     Base,
@@ -27,22 +34,7 @@ impl Role {
     }
 }
 
-#[derive(Debug, Clone, Copy, EnumString, Display, EnumIter, PartialEq, Eq)]
-pub enum Variant {
-    Main,
-    Moon,
-    Dawn,
-}
-
 impl Variant {
-    pub fn is_light(&self) -> bool {
-        *self == Variant::Dawn
-    }
-
-    pub fn is_dark(&self) -> bool {
-        !self.is_light()
-    }
-
     pub fn get_color(&self, role: Role) -> Rgb {
         use crate::utils::rgb;
         match self {
@@ -98,5 +90,13 @@ impl Variant {
                 Role::HighlightHigh => rgb(206.0, 202.0, 205.0),
             },
         }
+    }
+
+    pub fn is_light(&self) -> bool {
+        *self == Variant::Dawn
+    }
+
+    pub fn is_dark(&self) -> bool {
+        !self.is_light()
     }
 }

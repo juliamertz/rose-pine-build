@@ -3,7 +3,7 @@ use std::str::FromStr;
 use strum::IntoEnumIterator;
 
 use crate::{
-    colors::{Role, Variant},
+    palette::{Role, Variant},
     utils::replace_substring,
     Config, Format,
 };

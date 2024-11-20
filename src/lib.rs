@@ -1,5 +1,6 @@
-pub mod colors;
 pub mod generate;
+pub mod palette;
+
 mod utils;
 
 use colors_transform::{AlphaColor, Color, Rgb};
@@ -17,7 +18,6 @@ pub enum Format {
     HslNs,
     HslArray,
     HslFunction,
-    // It's important these come last so that they won't be matched before other formats
     Hex,
     Rgb,
     Hsl,

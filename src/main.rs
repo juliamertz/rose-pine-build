@@ -1,7 +1,7 @@
 use std::{io::Write, path::PathBuf};
 
 use clap::Parser;
-use rosepine_build::{colors::Variant, generate, Config, Format};
+use rosepine_build::{palette::Variant, generate, Config, Format};
 use strum::IntoEnumIterator;
 
 #[derive(Parser)]
