@@ -1,4 +1,3 @@
-use colors_transform::AlphaColor;
 use std::{num::ParseFloatError, str::FromStr};
 
 use crate::{
@@ -15,16 +14,12 @@ pub struct Template {
 
 impl Template {
     pub fn format_role(&self, variant: Variant, config: &Config) -> String {
-        let mut color = self.role.get_color(variant);
-        if let Some(opacity) = self.opacity {
-            color = color.set_alpha(opacity / 100.0)
-        }
         let format = match self.format {
             Some(ref format) => format,
             None => &config.format,
         };
 
-        format.format_color(color, self.opacity)
+        format.format_color(self.role.get_color(variant), self.opacity)
     }
 }
 

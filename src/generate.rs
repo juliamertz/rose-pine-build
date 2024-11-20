@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use regex::Regex;
-use strum::VariantNames;
+use strum::{IntoEnumIterator, VariantNames};
 
 use crate::{
     palette::{Role, Variant},
@@ -8,11 +10,8 @@ use crate::{
     Config, Format,
 };
 
-pub struct Outputs {
-    pub main: String,
-    pub moon: String,
-    pub dawn: String,
-}
+/// HashMap containing generation output strings for each variant
+pub type Outputs = HashMap<Variant, String>;
 
 #[derive(Clone, Debug)]
 pub struct Generator {
@@ -41,11 +40,11 @@ impl Generator {
     }
 
     pub fn generate_variants(&self, text: &str) -> Result<Outputs, ParseError> {
-        Ok(Outputs {
-            main: self.generate_variant(Variant::Main, text)?,
-            moon: self.generate_variant(Variant::Moon, text)?,
-            dawn: self.generate_variant(Variant::Dawn, text)?,
-        })
+        let mut outputs = HashMap::new();
+        for v in Variant::iter() {
+            outputs.insert(v, self.generate_variant(v, text)?);
+        }
+        Ok(outputs)
     }
 
     pub fn generate_variant(&self, variant: Variant, text: &str) -> Result<String, ParseError> {
@@ -67,13 +66,20 @@ impl Generator {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::OnceLock;
+
     use super::*;
+
+    static GENERATOR: OnceLock<Generator> = OnceLock::new();
+    pub fn generate_variant(variant: Variant, text: &str) -> Result<String, ParseError> {
+        GENERATOR.get_or_init(|| Generator::new(Config::default()))
+            .generate_variant(variant, text)
+    }
 
     #[test]
     fn format_rgb() -> Result<(), ParseError> {
-        let generator = Generator::new(Config::default());
         assert_eq!(
-            generator.generate_variant(Variant::Moon, "$love:rgb")?,
+            generate_variant(Variant::Moon, "$love:rgb")?,
             "235, 111, 146"
         );
         Ok(())
@@ -81,22 +87,20 @@ mod tests {
 
     #[test]
     fn format_parse_order() -> Result<(), ParseError> {
-        let generator = Generator::new(Config::default());
         assert_eq!(
-            generator.generate_variant(
+            generate_variant(
                 Variant::Moon,
                 "$love:rgb_function,$love:rgb,$love:hex_ns,$love:hex",
             )?,
-            "rgb(235, 111, 146),235, 111, 146,EB6F92,#EB6F92"
+            "rgb(235, 111, 146),235, 111, 146,eb6f92,#eb6f92"
         );
         Ok(())
     }
 
     #[test]
     fn format_hsl() -> Result<(), ParseError> {
-        let g = Generator::new(Config::default());
         assert_eq!(
-            g.generate_variant(Variant::Moon, "$love:hsl_function")?,
+            generate_variant(Variant::Moon, "$love:hsl_function")?,
             "hsl(343, 76%, 68%)"
         );
         Ok(())
@@ -104,48 +108,40 @@ mod tests {
 
     #[test]
     fn opacity() -> Result<(), ParseError> {
-        let g = Generator::new(Config::default());
         assert_eq!(
-            g.generate_variant(Variant::Moon, "$love:rgb_function/50")?,
+            generate_variant(Variant::Moon, "$love:rgb_function/50")?,
             "rgba(235, 111, 146, 0.5)"
         );
         assert_eq!(
-            g.generate_variant(Variant::Moon, "$love:hsl_function/50")?,
+            generate_variant(Variant::Moon, "$love:hsl_function/50")?,
             "hsla(343, 76%, 68%, 0.5%)"
         );
         assert_eq!(
-            g.generate_variant(Variant::Moon, "$love:hex/100")?,
-            "#EB6F92FF"
+            generate_variant(Variant::Moon, "$love:hex/100")?,
+            "#eb6f92ff"
+        );
+        assert_eq!(generate_variant(Variant::Moon, "$love:hex/0")?, "#eb6f9200");
+        assert_eq!(
+            generate_variant(Variant::Moon, "$love:ahex_ns/50")?,
+            "80eb6f92"
         );
         assert_eq!(
-            g.generate_variant(Variant::Moon, "$love:hex/0")?,
-            "#EB6F9200"
-        );
-        assert_eq!(
-            g.generate_variant(Variant::Moon, "$love:ahex_ns/50")?,
-            "80EB6F92"
-        );
-        assert_eq!(
-            g.generate_variant(Variant::Moon, "$love:ahex_ns/100")?,
-            "FFEB6F92"
+            generate_variant(Variant::Moon, "$love:ahex_ns/100")?,
+            "ffeb6f92"
         );
         Ok(())
     }
 
     #[test]
     fn role_variation() -> Result<(), ParseError> {
-        let g = Generator::new(Config::default());
+        assert_eq!(generate_variant(Variant::Main, "$(pine|foam)")?, "#31748f");
         assert_eq!(
-            g.generate_variant(Variant::Main, "$(pine|foam)")?,
-            "#31748F"
+            generate_variant(Variant::Main, "$(rose|love):hex")?,
+            "#ebbcba"
         );
         assert_eq!(
-            g.generate_variant(Variant::Main, "$(rose|love):hex")?,
-            "#EBBCBA"
-        );
-        assert_eq!(
-            g.generate_variant(Variant::Dawn, "$(rose|love):hex")?,
-            "#B4637A"
+            generate_variant(Variant::Dawn, "$(rose|love):hex")?,
+            "#b4637a"
         );
 
         Ok(())

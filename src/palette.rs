@@ -1,7 +1,10 @@
+use clap::ValueEnum;
 use colors_transform::Rgb;
 use strum_macros::{Display, EnumIter, EnumString, VariantNames};
 
-#[derive(Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString)]
+#[derive(
+    Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString, Hash, ValueEnum,
+)]
 pub enum Variant {
     Main,
     Moon,

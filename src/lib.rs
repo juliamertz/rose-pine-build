@@ -10,6 +10,12 @@ use std::char;
 use strum_macros::{Display, EnumString, VariantNames};
 use utils::ColorValues;
 
+#[derive(Clone, Debug)]
+pub struct Config {
+    pub prefix: char,
+    pub format: Format,
+}
+
 #[derive(EnumString, VariantNames, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
 pub enum Format {
@@ -39,12 +45,6 @@ pub enum Format {
     HslArray,
     /// hsl(2, 55%, 83%)
     HslFunction,
-}
-
-#[derive(Clone, Debug)]
-pub struct Config {
-    pub prefix: char,
-    pub format: Format,
 }
 
 impl Config {
