@@ -1,25 +1,35 @@
-use colors_transform::Color;
-use rosepine_build::colors::{Role, Variant};
+use std::{io::Write, path::PathBuf};
+
+use clap::Parser;
+use rosepine_build::{colors::Variant, generate, Config};
+use strum::IntoEnumIterator;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[clap(long, short)]
+    write: bool,
+
+    #[clap(long, short)]
+    out_dir: Option<PathBuf>,
+
+    template_file: PathBuf,
+}
 
 fn main() {
-    let c = Role::Love.get_color(Variant::Moon);
-    let r = c.get_red();
-    let g = c.get_green();
-    let b = c.get_blue();
-    // rgb(235, 111, 146)
-    println!("rgb({r}, {g}, {b})");
-    // let content = String::from(
-    //     r#"
-    //     $love
-    //     #ff0000
-    //     $love:rgb_function
-    //     $love:hsl_function
-    //     rgb(100, 200, 150)
-    // "#,
-    // );
-    //
-    // let replaced = replace_templates(&content, Variant::Moon, &Config::default());
-    //
-    // dbg!(&content);
-    // dbg!(&replaced);
+    let args = Args::parse();
+
+    let out_dir = args.out_dir.unwrap_or("dist".into());
+    _ = std::fs::create_dir_all(&out_dir);
+
+    let content = std::fs::read_to_string(args.template_file).unwrap();
+
+    for variant in Variant::iter() {
+        let result = generate::replace_templates(&content, variant, &Config::default());
+        if args.write {
+            std::fs::write(out_dir.join(format!("{variant}.toml")), result).unwrap();
+        } else {
+            std::io::stdout().write_all(result.as_bytes()).unwrap();
+        }
+    }
 }

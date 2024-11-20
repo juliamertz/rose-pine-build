@@ -56,7 +56,6 @@ impl Format {
         } else {
             rgb_values(color)
         };
-        dbg!(&chunks);
         if alpha {
             chunks.push(color.get_alpha());
         }

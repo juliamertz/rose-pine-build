@@ -28,7 +28,6 @@ fn parse_capture_role(value: &str, variant: Variant) -> Role {
         None => value,
     };
 
-    dbg!(&role_name);
     Role::from_str(role_name.trim()).expect("valid role name")
 }
 
@@ -82,7 +81,7 @@ pub fn replace_templates(text: &str, variant: Variant, config: &Config) -> Strin
     Regex::new(&pattern)
         .expect("valid regex pattern")
         .find_iter(text)
-        .collect::<Vec<_>>()
+        .collect::<Vec<_>>() // HACK: Collect so we can reverse?
         .iter()
         .rev()
         .for_each(|m| {
