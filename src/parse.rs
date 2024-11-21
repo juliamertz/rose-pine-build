@@ -5,6 +5,7 @@ use std::{
     vec,
 };
 
+use colors_transform::Rgb;
 use heck::{ToLowerCamelCase, ToSnakeCase};
 use strum::{IntoEnumIterator, VariantNames};
 
@@ -13,20 +14,83 @@ use crate::{
     palette::{Role, Variant},
 };
 
-pub enum RoleCapture {
-    /// Role for each variant
-    All(Role),
-    /// Seperate roles for light & dark variants
-    DarkLight(Role,Role),
-    /// Each variant has gets its own role
-    Seperate(Role,Role,Role),
+// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// pub enum VariantRoles {
+//     /// Role for each variant
+//     All(Role),
+//     /// Seperate roles for light & dark variants
+//     DarkLight(Role, Role),
+//     /// Each variant gets its own role
+//     Seperate(Role, Role, Role),
+// }
+
+// impl VariantRoles {
+//     pub fn get_color(&self, variant: &Variant) -> Rgb {
+//         match self {
+//             Self::All(role) => role,
+//             Self::DarkLight(dark, light) => {
+//                 if variant.is_dark() {
+//                     dark
+//                 } else {
+//                     light
+//                 }
+//             }
+//             Self::Seperate(main, moon, dawn) => match variant {
+//                 Variant::Main => main,
+//                 Variant::Moon => moon,
+//                 Variant::Dawn => dawn,
+//             },
+//         }
+//         .get_color(variant)
+//     }
+// }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VariantRoles {
+    roles: Vec<Role>,
+}
+
+impl VariantRoles {
+    fn new() -> Self {
+        Self {
+            roles: Vec::with_capacity(3),
+        }
+    }
+
+    fn push(&mut self, val: Role) {
+        if self.roles.len() < 3 {
+            self.roles.push(val)
+        }
+    }
+
+    fn get_color(&self, variant: &Variant) -> Rgb {
+        match self.roles.as_slice() {
+            [role] => role,
+            [dark, light] => {
+                if variant.is_dark() {
+                    dark
+                } else {
+                    light
+                }
+            }
+            [main, moon, dawn] => match variant {
+                Variant::Main => main,
+                Variant::Moon => moon,
+                Variant::Dawn => dawn,
+            },
+            _ => unreachable!(),
+        }
+        .get_color(variant)
+    }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Capture {
-    pub role: Role,
+    pub role: VariantRoles,
     pub format: Option<Format>,
     pub opacity: Option<u16>,
+    pub start: usize,
+    pub end: usize,
 }
 
 impl Capture {
@@ -144,24 +208,55 @@ impl Parser {
         true
     }
 
-    fn match_role(&self) -> Option<Role> {
-        dbg!("match_role line :137");
-        dbg!(self, self.lookhead());
-        Role::iter().find(|v| self.matchahead(&v.to_string().to_lower_camel_case()))
-    }
-
     fn match_format(&mut self) -> Option<Format> {
-        Format::iter().find(|v| self.matchahead(&v.to_string().to_snake_case()))
+        Format::iter()
+            .rev()
+            .find(|v| self.matchahead(&v.to_string().to_snake_case()))
     }
 }
 
-fn parse_capture(p: &mut Parser, _config: &Config) -> Result<Capture, ParseError> {
-    if p.current() == Some(&'(') {}
-    let role = match p.match_role() {
-        Some(v) => v,
+fn scan_role(p: &mut Parser) -> Result<Role, ParseError> {
+    let role = match Role::iter().find(|v| p.matchahead(&v.to_string().to_lower_camel_case())) {
+        Some(v) => {
+            p.advance_n(v.to_string().len() - 1);
+            v
+        }
         None => return Err(ParseError::RoleNotFound),
     };
-    p.advance_n(role.to_string().len() - 1);
+
+    Ok(role)
+}
+
+fn parse_capture(p: &mut Parser, _config: &Config) -> Result<Capture, ParseError> {
+    let mut roles = VariantRoles::new();
+
+    println!("{p}");
+    let start = p.index.expect("index to be set");
+
+    if p.current() == Some(&'(') {
+        p.advance();
+        roles.push(scan_role(p)?);
+
+        if p.lookhead() == Some(&'|') {
+            p.advance_n(2);
+            roles.push(scan_role(p)?);
+
+            if p.lookhead() == Some(&'|') {
+                p.advance_n(2);
+                roles.push(scan_role(p)?);
+            }
+        }
+
+        if p.lookhead() != Some(&')') {
+            return Err(ParseError::CloseParenExpected);
+        }
+
+        p.advance_n(1)
+    } else {
+        println!("{p}");
+        dbg!(p.current(), p.lookhead());
+        roles.push(scan_role(p)?);
+    }
 
     let format = if p.lookhead() == Some(&':') {
         p.advance_n(2);
@@ -196,44 +291,30 @@ fn parse_capture(p: &mut Parser, _config: &Config) -> Result<Capture, ParseError
     };
 
     Ok(Capture {
-        role,
+        role: roles,
         format,
         opacity,
+        start,
+        end: p.index.unwrap(),
     })
 }
 
 pub fn parse_template(content: &str, config: &Config) -> Vec<Result<Capture, ParseError>> {
+    let mut parser = Parser::new(content, &Config::default());
     let mut captures = vec![];
-    let mut parser = Parser::new("$love:rgb/80", &Config::default());
 
-    while let Some(c) = parser.lookhead() {
-        dbg!(&c);
-
+    while parser.lookhead().is_some() {
         if parser.current() == Some(&'$') {
             parser.advance();
             let capture = parse_capture(&mut parser, config);
-            dbg!(capture);
+            captures.push(capture);
         }
 
         parser.advance();
     }
-    // dbg!(&captures);
 
     captures
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn parsing() -> Result<(), ParseError> {
-//         parse_template("", &Config::default());
-//         panic!("aah");
-//
-//         Ok(())
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
@@ -251,29 +332,42 @@ mod tests {
         let asserts = [
             (
                 "base:rgb",
-                Capture::new(Role::Base, Some(Format::Rgb), None),
+                Capture::new(vec![Role::Base], Some(Format::Rgb), None),
             ),
             (
-                "$surface:hsl",
-                Capture::new(Role::Surface, Some(Format::Hsl), None),
+                "surface:hsl",
+                Capture::new(vec![Role::Surface], Some(Format::Hsl), None),
             ),
             (
-                "$highlightMed:ahex_ns/80",
-                Capture::new(Role::HighlightMed, Some(Format::AhexNs), Some(80)),
+                "highlightMed:ahex_ns/80",
+                Capture::new(vec![Role::HighlightMed], Some(Format::AhexNs), Some(80)),
             ),
             (
-                "$(foam|pine):hex",
-                Capture::new(Role::Foam, Some(Format::Hex), None),
+                "(foam|pine):hex",
+                Capture::new(vec![Role::Foam, Role::Pine], Some(Format::Hex), None),
             ),
             (
-                "$(rose|love):hsl/50",
-                Capture::new(Role::Foam, Some(Format::Hex), None),
+                "(rose|love):hsl/50",
+                Capture::new(vec![Role::Rose, Role::Love], Some(Format::Hsl), Some(50)),
+            ),
+            (
+                "(iris|foam|pine):hsl_function/75",
+                Capture::new(
+                    vec![Role::Iris, Role::Foam, Role::Pine],
+                    Some(Format::HslFunction),
+                    Some(75),
+                ),
             ),
         ];
 
         for (template, correct) in asserts {
             match parse_capture(template) {
-                Ok(capture) => assert_eq!(capture, correct,),
+                Ok(mut capture) => {
+                    // reset positions for testing purposes
+                    capture.start = 0;
+                    capture.end = 0;
+                    assert_eq!(capture, correct)
+                }
                 Err(e) => {
                     eprintln!("Unable to parse capture {correct:?}, error: {e:?}");
                     return Err(ParseError::OpenParenExpected);
@@ -285,11 +379,13 @@ mod tests {
     }
 
     impl Capture {
-        fn new(role: Role, format: Option<Format>, opacity: Option<u16>) -> Self {
+        fn new(roles: Vec<Role>, format: Option<Format>, opacity: Option<u16>) -> Self {
             Self {
-                role,
+                role: VariantRoles { roles },
                 format,
                 opacity,
+                start: 0,
+                end: 0,
             }
         }
     }

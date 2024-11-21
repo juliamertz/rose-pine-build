@@ -179,7 +179,7 @@ impl Generator {
     }
 
     pub fn generate_variant(&self, variant: Variant, text: &str) -> Result<String, ParseError> {
-        // let captures = parse::parse_capture(value, variant, config)
+        let captures = parse::parse_template(text, &self.config);
         // let captures = self.pattern.find_iter(text).collect::<Vec<_>>();
         todo!();
         let mut buffer = text.to_owned();
