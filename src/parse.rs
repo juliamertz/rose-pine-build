@@ -1,8 +1,9 @@
 use heck::{ToLowerCamelCase, ToSnakeCase};
-use std::{num::ParseIntError, vec};
-use strum::IntoEnumIterator;
+use std::{fmt::Display, num::ParseIntError, vec};
+use strum::{IntoEnumIterator, VariantNames};
 
 use crate::{
+    casing::{Case, Casing},
     generate::{Config, Format},
     palette::{transform::Rgb, Role, Variant},
 };
@@ -23,8 +24,7 @@ pub struct Capture {
 
 #[derive(Debug)]
 pub enum ParseError {
-    RoleNotFound,
-    FormatNotFound,
+    VariantNotFound,
     PrefixExpected,
     OpenParenExpected,
     CloseParenExpected,
@@ -72,17 +72,23 @@ impl Parser {
         self.index
     }
 
-    fn lookhead(&self) -> Option<&char> {
+    fn skip_whitespace(&mut self) {
+        while let Some(' ') = self.lookahead() {
+            self.advance();
+        }
+    }
+
+    fn lookahead(&self) -> Option<&char> {
         self.index.and_then(|i| self.content.get(i + 1))
     }
 
-    fn lookhead_n(&self, n: usize) -> Option<&char> {
+    fn lookahead_n(&self, n: usize) -> Option<&char> {
         self.index.and_then(|i| self.content.get(i + n))
     }
 
     fn match_ahead(&self, pattern: &str) -> bool {
         for (i, a) in pattern.char_indices() {
-            if let Some(b) = self.lookhead_n(i) {
+            if let Some(b) = self.lookahead_n(i) {
                 if a != *b {
                     return false;
                 }
@@ -93,13 +99,31 @@ impl Parser {
 
         true
     }
+
+    fn parse_enumvalue<T>(&mut self, case: Case) -> Result<T, ParseError>
+    where
+        T: VariantNames + IntoEnumIterator + Display,
+    {
+        let val = match T::iter()
+            .rev()
+            .find(|v| self.match_ahead(&v.to_string().to_case(case)))
+        {
+            Some(v) => {
+                self.advance_n(v.to_string().len() - 1);
+                v
+            }
+            None => return Err(ParseError::VariantNotFound),
+        };
+
+        Ok(val)
+    }
 }
 
 pub fn parse_template(content: &str, config: &Config) -> Vec<Result<Capture, ParseError>> {
     let mut parser = Parser::new(content, config);
     let mut captures = vec![];
 
-    while parser.lookhead().is_some() {
+    while parser.lookahead().is_some() {
         if parser.current() == Some(&config.prefix) {
             captures.push(parse_capture(&mut parser));
         }
@@ -108,33 +132,6 @@ pub fn parse_template(content: &str, config: &Config) -> Vec<Result<Capture, Par
     }
 
     captures
-}
-
-fn parse_role(p: &mut Parser) -> Result<Role, ParseError> {
-    let role = match Role::iter().find(|v| p.match_ahead(&v.to_string().to_lower_camel_case())) {
-        Some(v) => {
-            p.advance_n(v.to_string().len() - 1);
-            v
-        }
-        None => return Err(ParseError::RoleNotFound),
-    };
-
-    Ok(role)
-}
-
-fn parse_format(p: &mut Parser) -> Result<Format, ParseError> {
-    let format = match Format::iter()
-        .rev()
-        .find(|v| p.match_ahead(&v.to_string().to_snake_case()))
-    {
-        Some(v) => {
-            p.advance_n(v.to_string().len() - 1);
-            v
-        }
-        None => return Err(ParseError::RoleNotFound),
-    };
-
-    Ok(format)
 }
 
 fn parse_capture(p: &mut Parser) -> Result<Capture, ParseError> {
@@ -148,20 +145,28 @@ fn parse_capture(p: &mut Parser) -> Result<Capture, ParseError> {
 
     // Grouped roles
     if p.current() == Some(&p.config.delimiter.open()) {
+        p.skip_whitespace();
         p.advance();
-        roles.push(parse_role(p)?);
+        roles.push(p.parse_enumvalue(Case::Snake)?);
+        p.skip_whitespace();
 
-        if p.lookhead() == Some(&p.config.seperator) {
-            p.advance_n(2);
-            roles.push(parse_role(p)?);
+        if p.lookahead() == Some(&p.config.seperator) {
+            p.advance();
+            p.skip_whitespace();
+            p.advance();
+            roles.push(p.parse_enumvalue(Case::Snake)?);
+            p.skip_whitespace();
 
-            if p.lookhead() == Some(&p.config.seperator) {
-                p.advance_n(2);
-                roles.push(parse_role(p)?);
+            if p.lookahead() == Some(&p.config.seperator) {
+                p.advance();
+                p.skip_whitespace();
+                p.advance();
+                roles.push(p.parse_enumvalue(Case::Snake)?);
             }
+            p.skip_whitespace();
         }
 
-        if p.lookhead() != Some(&p.config.delimiter.close()) {
+        if p.lookahead() != Some(&p.config.delimiter.close()) {
             return Err(ParseError::CloseParenExpected);
         }
 
@@ -169,21 +174,21 @@ fn parse_capture(p: &mut Parser) -> Result<Capture, ParseError> {
     }
     // Role name without group
     else {
-        roles.push(parse_role(p)?);
+        roles.push(p.parse_enumvalue(Case::Snake)?);
     }
 
-    let format = if p.lookhead() == Some(&':') {
+    let format = if p.lookahead() == Some(&':') {
         p.advance_n(2);
-        Some(parse_format(p)?)
+        Some(p.parse_enumvalue(Case::Snake)?)
     } else {
         None
     };
 
-    let opacity = if p.lookhead() == Some(&'/') {
+    let opacity = if p.lookahead() == Some(&'/') {
         p.advance();
         let mut buf: Vec<char> = vec![];
 
-        while let Some(c) = p.lookhead() {
+        while let Some(c) = p.lookahead() {
             if c.is_ascii_digit() && buf.len() < 3 {
                 buf.push(*c);
                 p.advance();
@@ -271,6 +276,23 @@ mod tests {
     }
 
     #[test]
+    fn role_variants_whitespace() {
+        assert_capture("$( pine )", Capture::new(vec![Role::Pine], None, None));
+        assert_capture(
+            "$( rose | love )",
+            Capture::new(vec![Role::Rose, Role::Love], None, None),
+        );
+        assert_capture(
+            "$( foam | pine | iris )",
+            Capture::new(vec![Role::Foam, Role::Pine, Role::Iris], None, None),
+        );
+        assert_capture(
+            "$(    rose   |   love )",
+            Capture::new(vec![Role::Rose, Role::Love], None, None),
+        );
+    }
+
+    #[test]
     fn format() {
         assert_capture(
             "$base:rgb",
@@ -328,18 +350,9 @@ mod tests {
 
     #[test]
     fn opacity() {
-        assert_capture(
-            "$base/100",
-            Capture::new(vec![Role::Base], None, Some(100)),
-        );
-        assert_capture(
-            "$base/50",
-            Capture::new(vec![Role::Base], None, Some(50)),
-        );
-        assert_capture(
-            "$base/0",
-            Capture::new(vec![Role::Base], None, Some(0)),
-        );
+        assert_capture("$base/100", Capture::new(vec![Role::Base], None, Some(100)));
+        assert_capture("$base/50", Capture::new(vec![Role::Base], None, Some(50)));
+        assert_capture("$base/0", Capture::new(vec![Role::Base], None, Some(0)));
         assert_capture(
             "$base:rgb_function/75",
             Capture::new(vec![Role::Base], Some(Format::RgbFunction), Some(75)),

@@ -106,10 +106,10 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            prefix: '$',
             format: Format::Hex,
+            delimiter: Delimiter::Parenthesis,
+            prefix: '$',
             seperator: '|',
-            delimiter: Delimiter::Parenthesis
         }
     }
 }
