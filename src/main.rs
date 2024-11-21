@@ -1,6 +1,7 @@
 use clap::Parser;
 use rosepine::{
-    generate::{Config, Delimiter, Format, Generator},
+    generate::{Config, Delimiter, Generator},
+    format::Format,
     palette::Variant,
 };
 use std::{fs, path::PathBuf};

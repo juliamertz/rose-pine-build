@@ -1,10 +1,10 @@
-use heck::{ToLowerCamelCase, ToSnakeCase};
 use std::{fmt::Display, num::ParseIntError, vec};
 use strum::{IntoEnumIterator, VariantNames};
 
 use crate::{
     casing::{Case, Casing},
-    generate::{Config, Format},
+    format::Format,
+    generate::Config,
     palette::{transform::Rgb, Role, Variant},
 };
 
@@ -197,8 +197,12 @@ fn parse_capture(p: &mut Parser) -> Result<Capture, ParseError> {
             }
         }
 
-        let joined = buf.into_iter().collect::<String>();
-        let parsed: u16 = joined.parse::<u16>().map_err(ParseError::InvalidOpacity)?;
+        let parsed: u16 = buf
+            .into_iter()
+            .collect::<String>()
+            .parse::<u16>()
+            .map_err(ParseError::InvalidOpacity)?;
+
         Some(parsed)
     } else {
         None

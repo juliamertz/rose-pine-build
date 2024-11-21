@@ -58,19 +58,24 @@
             name = "dev-shell";
             inherit nativeBuildInputs;
 
-          buildInputs = let
-            overlays = [ (import inputs.rust-overlay) ];
-            pkgs = import (inputs.nixpkgs) { inherit system overlays; }; 
-          in
-          buildInputs ++ (with pkgs.rust-bin; [
-            (stable.latest.minimal.override {
-              extensions = [ "clippy" "rust-src" ];
-            })
+            buildInputs =
+              let
+                overlays = [ (import inputs.rust-overlay) ];
+                pkgs = import (inputs.nixpkgs) { inherit system overlays; };
+              in
+              buildInputs
+              ++ (with pkgs.rust-bin; [
+                (stable.latest.minimal.override {
+                  extensions = [
+                    "clippy"
+                    "rust-src"
+                  ];
+                })
 
-            nightly.latest.clippy
-            nightly.latest.rustfmt
-            nightly.latest.rust-analyzer
-          ]);
+                nightly.latest.clippy
+                nightly.latest.rustfmt
+                nightly.latest.rust-analyzer
+              ]);
           };
 
         };
