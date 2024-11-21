@@ -1,0 +1,12 @@
+[package]
+name = "palette"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+colors-transform = "0.2.11"
+strum = "0.26.3"
+strum_macros = "0.26.4"
