@@ -1,6 +1,6 @@
 use clap::Parser;
 use rosepine::{
-    generate::{Config, Format, Generator},
+    generate::{Config, Delimiter, Format, Generator},
     palette::Variant,
 };
 use std::{fs, path::PathBuf};
@@ -14,6 +14,12 @@ struct Args {
     #[clap(long, short, default_value = "hex")]
     format: Format,
 
+    #[clap(long, short, default_value = "parenthesis")]
+    delimiter: Delimiter,
+
+    #[clap(long, short, default_value = "|")]
+    seperator: char,
+
     #[clap(long, short)]
     variant: Option<Variant>,
 
@@ -25,7 +31,7 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    let config = Config::new(args.prefix, args.format);
+    let config = Config::new(args.prefix, args.format, args.seperator, args.delimiter);
 
     let content = fs::read_to_string(&args.template_file).unwrap();
     let generator = Generator::new(config);

@@ -101,8 +101,7 @@ pub fn parse_template(content: &str, config: &Config) -> Vec<Result<Capture, Par
 
     while parser.lookhead().is_some() {
         if parser.current() == Some(&config.prefix) {
-            let capture = parse_capture(&mut parser);
-            captures.push(capture);
+            captures.push(parse_capture(&mut parser));
         }
 
         parser.advance();
@@ -148,21 +147,21 @@ fn parse_capture(p: &mut Parser) -> Result<Capture, ParseError> {
     p.advance();
 
     // Grouped roles
-    if p.current() == Some(&'(') {
+    if p.current() == Some(&p.config.delimiter.open()) {
         p.advance();
         roles.push(parse_role(p)?);
 
-        if p.lookhead() == Some(&'|') {
+        if p.lookhead() == Some(&p.config.seperator) {
             p.advance_n(2);
             roles.push(parse_role(p)?);
 
-            if p.lookhead() == Some(&'|') {
+            if p.lookhead() == Some(&p.config.seperator) {
                 p.advance_n(2);
                 roles.push(parse_role(p)?);
             }
         }
 
-        if p.lookhead() != Some(&')') {
+        if p.lookhead() != Some(&p.config.delimiter.close()) {
             return Err(ParseError::CloseParenExpected);
         }
 
@@ -179,8 +178,6 @@ fn parse_capture(p: &mut Parser) -> Result<Capture, ParseError> {
     } else {
         None
     };
-
-    dbg!(format);
 
     let opacity = if p.lookhead() == Some(&'/') {
         p.advance();
@@ -260,62 +257,109 @@ impl VariantRoles {
 mod tests {
     use super::*;
 
-    fn parse_capture(content: &str) -> Result<Capture, ParseError> {
-        let config = Config::default();
-        let mut parser = Parser::new(content, &config);
-        let capture = super::parse_capture(&mut parser)?;
-        Ok(capture)
+    #[test]
+    fn role_variants() {
+        assert_capture("$(pine)", Capture::new(vec![Role::Pine], None, None));
+        assert_capture(
+            "$(rose|love)",
+            Capture::new(vec![Role::Rose, Role::Love], None, None),
+        );
+        assert_capture(
+            "$(foam|pine|iris)",
+            Capture::new(vec![Role::Foam, Role::Pine, Role::Iris], None, None),
+        );
     }
 
     #[test]
-    fn template_parsing() -> Result<(), ParseError> {
-        let asserts = [
-            (
-                "$base:rgb",
-                Capture::new(vec![Role::Base], Some(Format::Rgb), None),
-            ),
-            (
-                "$surface:hsl",
-                Capture::new(vec![Role::Surface], Some(Format::Hsl), None),
-            ),
-            (
-                "$highlightMed:ahex_ns/80",
-                Capture::new(vec![Role::HighlightMed], Some(Format::AhexNs), Some(80)),
-            ),
-            (
-                "$(foam|pine):hex",
-                Capture::new(vec![Role::Foam, Role::Pine], Some(Format::Hex), None),
-            ),
-            (
-                "$(rose|love):hsl/50",
-                Capture::new(vec![Role::Rose, Role::Love], Some(Format::Hsl), Some(50)),
-            ),
-            (
-                "$(iris|foam|pine):hsl_function/75",
-                Capture::new(
-                    vec![Role::Iris, Role::Foam, Role::Pine],
-                    Some(Format::HslFunction),
-                    Some(75),
-                ),
-            ),
-        ];
+    fn format() {
+        assert_capture(
+            "$base:rgb",
+            Capture::new(vec![Role::Base], Some(Format::Rgb), None),
+        );
+        assert_capture(
+            "$base:rgb_ns",
+            Capture::new(vec![Role::Base], Some(Format::RgbNs), None),
+        );
+        assert_capture(
+            "$base:rgb_function",
+            Capture::new(vec![Role::Base], Some(Format::RgbFunction), None),
+        );
+        assert_capture(
+            "$base:rgb_array",
+            Capture::new(vec![Role::Base], Some(Format::RgbArray), None),
+        );
+        assert_capture(
+            "$base:rgb_ansi",
+            Capture::new(vec![Role::Base], Some(Format::RgbAnsi), None),
+        );
+        assert_capture(
+            "$base:hsl",
+            Capture::new(vec![Role::Base], Some(Format::Hsl), None),
+        );
+        assert_capture(
+            "$base:hsl_ns",
+            Capture::new(vec![Role::Base], Some(Format::HslNs), None),
+        );
+        assert_capture(
+            "$base:hsl_function",
+            Capture::new(vec![Role::Base], Some(Format::HslFunction), None),
+        );
+        assert_capture(
+            "$base:hsl_array",
+            Capture::new(vec![Role::Base], Some(Format::HslArray), None),
+        );
+        assert_capture(
+            "$base:hex",
+            Capture::new(vec![Role::Base], Some(Format::Hex), None),
+        );
+        assert_capture(
+            "$base:ahex",
+            Capture::new(vec![Role::Base], Some(Format::Ahex), None),
+        );
+        assert_capture(
+            "$base:hex_ns",
+            Capture::new(vec![Role::Base], Some(Format::HexNs), None),
+        );
+        assert_capture(
+            "$base:ahex_ns",
+            Capture::new(vec![Role::Base], Some(Format::AhexNs), None),
+        );
+    }
 
-        for (template, correct) in asserts {
-            match parse_capture(template) {
-                Ok(mut capture) => {
-                    // reset positions for testing purposes
-                    capture.start = 0;
-                    capture.end = 0;
-                    assert_eq!(capture, correct)
-                }
-                Err(e) => {
-                    eprintln!("Unable to parse capture {correct:?}, error: {e:?}");
-                    return Err(ParseError::OpenParenExpected);
-                }
+    #[test]
+    fn opacity() {
+        assert_capture(
+            "$base/100",
+            Capture::new(vec![Role::Base], None, Some(100)),
+        );
+        assert_capture(
+            "$base/50",
+            Capture::new(vec![Role::Base], None, Some(50)),
+        );
+        assert_capture(
+            "$base/0",
+            Capture::new(vec![Role::Base], None, Some(0)),
+        );
+        assert_capture(
+            "$base:rgb_function/75",
+            Capture::new(vec![Role::Base], Some(Format::RgbFunction), Some(75)),
+        );
+    }
+
+    fn assert_capture(content: &str, correct: Capture) {
+        let config = Config::default();
+        let mut parser = Parser::new(content, &config);
+        match super::parse_capture(&mut parser) {
+            Ok(mut capture) => {
+                // reset positions for testing purposes
+                capture.start = 0;
+                capture.end = 0;
+                assert_eq!(capture, correct)
+            }
+            Err(e) => {
+                panic!("Unable to parse capture {correct:?}, error: {e:?}")
             }
         }
-
-        Ok(())
     }
 
     impl Capture {

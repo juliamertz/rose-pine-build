@@ -23,10 +23,40 @@ pub struct Generator {
     config: Config,
 }
 
+#[derive(Clone, Debug, ValueEnum)]
+pub enum Delimiter {
+    Parenthesis,
+    CurlyBracket,
+    AngleBracket,
+    SqaureBracket,
+}
+
+impl Delimiter {
+    pub fn open(&self) -> char {
+        match self {
+            Self::Parenthesis => '(',
+            Self::CurlyBracket => '{',
+            Self::AngleBracket => '<',
+            Self::SqaureBracket => '[',
+        }
+    }
+
+    pub fn close(&self) -> char {
+        match self {
+            Self::Parenthesis => ')',
+            Self::CurlyBracket => '}',
+            Self::AngleBracket => '>',
+            Self::SqaureBracket => ']',
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Config {
-    pub prefix: char,
     pub format: Format,
+    pub prefix: char,
+    pub seperator: char,
+    pub delimiter: Delimiter,
 }
 
 #[derive(
@@ -36,35 +66,40 @@ pub struct Config {
 pub enum Format {
     /// #ebbcba | #ebbcbaff
     Hex,
-    /// #ebbcba | #ffebbcba
-    Ahex,
-    /// 235, 188, 186
-    Rgb,
-    /// 2, 55%, 83%
-    Hsl,
     /// ebbcbaff
     HexNs,
+    /// #ebbcba | #ffebbcba
+    Ahex,
     /// ffebbcba
     AhexNs,
+    /// 235, 188, 186
+    Rgb,
     /// 235 188 186
     RgbNs,
-    /// 235;188;186
-    RgbAnsi,
-    /// [235, 188, 186]
-    RgbArray,
     /// rgb(235, 188, 186)
     RgbFunction,
+    /// 235;188;186
+    RgbArray,
+    /// 2, 55%, 83%
+    RgbAnsi,
+    /// [235, 188, 186]
+    Hsl,
     /// 2 55% 83%
     HslNs,
-    /// [2, 55%, 83%]
-    HslArray,
     /// hsl(2, 55%, 83%)
     HslFunction,
+    /// [2, 55%, 83%]
+    HslArray,
 }
 
 impl Config {
-    pub fn new(prefix: char, format: Format) -> Self {
-        Self { prefix, format }
+    pub fn new(prefix: char, format: Format, seperator: char, delimiter: Delimiter) -> Self {
+        Self {
+            prefix,
+            format,
+            seperator,
+            delimiter,
+        }
     }
 }
 
@@ -73,6 +108,8 @@ impl Default for Config {
         Self {
             prefix: '$',
             format: Format::Hex,
+            seperator: '|',
+            delimiter: Delimiter::Parenthesis
         }
     }
 }
@@ -184,15 +221,19 @@ impl Generator {
 
     pub fn generate_variant(&self, variant: Variant, text: &str) -> Result<String, ParseError> {
         let mut buffer = text.to_owned();
-        let caps = parse::parse_template(text, &self.config);
-        // Discard all non Ok results here
-        dbg!(&caps);
-        for capture in caps.into_iter().flatten().rev() {
-            buffer.substitute(
-                capture.format_role(variant, &self.config),
-                capture.start,
-                capture.end,
-            );
+        for capture in parse::parse_template(text, &self.config).into_iter().rev() {
+            match capture {
+                Ok(capture) => {
+                    buffer.substitute(
+                        capture.format_role(variant, &self.config),
+                        capture.start,
+                        capture.end,
+                    );
+                }
+                Err(err) => {
+                    eprintln!("Unable to parse template, error: {err:?}");
+                }
+            }
         }
 
         Ok(buffer)
