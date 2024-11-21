@@ -1,13 +1,27 @@
 use crate::palette::transform::Rgb;
-use palette::{transform::Color, ColorValues};
-use strum_macros::{Display, EnumIter, EnumString, VariantNames};
 use clap::ValueEnum;
+use palette::{transform::Color, ColorValues};
+use serde::{Deserialize, Serialize};
+use strum_macros::{Display, EnumIter, EnumString, VariantNames};
 
 #[derive(
-    EnumString, EnumIter, VariantNames, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Eq,
+    EnumString,
+    EnumIter,
+    VariantNames,
+    Display,
+    Debug,
+    ValueEnum,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    Default,
 )]
 #[strum(serialize_all = "snake_case")]
 pub enum Format {
+    #[default]
     /// #ebbcba | #ebbcbaff
     Hex,
     /// ebbcbaff
@@ -61,11 +75,11 @@ impl Format {
             false => color.color_values(),
         };
 
-        if let Some(alpha) = alpha {
+        if let Some(alpha) = alpha.map(|a| a.into() / 100.0) {
             match *self {
-                Self::Ahex | Self::AhexNs => chunks.insert(0, (alpha.into() / 100.0) * 255.0),
-                Self::Hex | Self::HexNs => chunks.push((alpha.into() / 100.0) * 255.0),
-                _ => chunks.push(alpha.into() / 100.0),
+                Self::Ahex | Self::AhexNs => chunks.insert(0, alpha * 255.0),
+                Self::Hex | Self::HexNs => chunks.push(alpha * 255.0),
+                _ => chunks.push(alpha),
             }
         }
 
@@ -125,5 +139,41 @@ impl Format {
             }
             _ => chunk.to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::palette::{Role, Variant};
+
+    fn assert_format(format: Format, alpha: Option<f32>, val: &str) {
+        let color = Role::Love.get_color(&Variant::Moon);
+        assert_eq!(val, format.format_color(color, alpha));
+    }
+
+    #[test]
+    fn format_rgb() {
+        assert_format(Format::Rgb, None, "235, 111, 146");
+        assert_format(Format::RgbFunction, None, "rgb(235, 111, 146)");
+        assert_format(Format::RgbFunction, Some(80.0), "rgba(235, 111, 146, 0.8)");
+        assert_format(Format::RgbArray, None, "[235, 111, 146]");
+    }
+
+    #[test]
+    fn format_hsl() {
+        assert_format(Format::HslFunction, None, "hsl(343, 76%, 68%)");
+        assert_format(Format::HslFunction, Some(70.0), "hsla(343, 76%, 68%, 0.7%)");
+    }
+
+    #[test]
+    fn format_hex() {
+        assert_format(Format::Hex, None, "#eb6f92");
+        assert_format(Format::Hex, Some(100.0), "#eb6f92ff");
+        assert_format(Format::Ahex, None, "#eb6f92");
+        assert_format(Format::Ahex, Some(100.0), "#ffeb6f92");
+        assert_format(Format::HexNs, None, "eb6f92");
+        assert_format(Format::HexNs, Some(100.0), "eb6f92ff");
+        assert_format(Format::AhexNs, Some(100.0), "ffeb6f92");
     }
 }

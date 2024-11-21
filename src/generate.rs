@@ -1,8 +1,9 @@
-use clap::ValueEnum;
-use std::{char, collections::HashMap};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
 use crate::{
+    config::Config,
     format::Format,
     palette::Variant,
     parse::{self, ParseError},
@@ -12,67 +13,33 @@ use crate::{
 /// HashMap containing output strings for each variant
 pub type Outputs = HashMap<Variant, String>;
 
-#[derive(Clone, Debug)]
-pub struct Generator {
-    config: Config,
-}
-
-#[derive(Clone, Debug, ValueEnum)]
-pub enum Delimiter {
-    Parenthesis,
-    CurlyBracket,
-    AngleBracket,
-    SqaureBracket,
-}
-
-impl Delimiter {
-    pub fn open(&self) -> char {
-        match self {
-            Self::Parenthesis => '(',
-            Self::CurlyBracket => '{',
-            Self::AngleBracket => '<',
-            Self::SqaureBracket => '[',
-        }
-    }
-
-    pub fn close(&self) -> char {
-        match self {
-            Self::Parenthesis => ')',
-            Self::CurlyBracket => '}',
-            Self::AngleBracket => '>',
-            Self::SqaureBracket => ']',
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Config {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GenerateOptions {
     pub format: Format,
-    pub prefix: char,
-    pub seperator: char,
-    pub delimiter: Delimiter,
+    pub strip_spaces: bool,
 }
 
-impl Config {
-    pub fn new(prefix: char, format: Format, seperator: char, delimiter: Delimiter) -> Self {
-        Self {
-            prefix,
-            format,
-            seperator,
-            delimiter,
-        }
-    }
-}
-
-impl Default for Config {
+impl Default for GenerateOptions {
     fn default() -> Self {
         Self {
             format: Format::Hex,
-            delimiter: Delimiter::Parenthesis,
-            prefix: '$',
-            seperator: '|',
+            strip_spaces: false,
         }
     }
+}
+
+impl GenerateOptions {
+    pub fn new(format: Format) -> Self {
+        Self {
+            format,
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Generator {
+    config: Config,
 }
 
 impl Generator {
@@ -89,12 +56,13 @@ impl Generator {
     }
 
     pub fn generate_variant(&self, variant: Variant, text: &str) -> Result<String, ParseError> {
-        let mut buffer = text.to_owned();
+        let mut buffer: Vec<char> = text.to_owned().chars().collect();
         for capture in parse::parse_template(text, &self.config).into_iter().rev() {
             match capture {
                 Ok(capture) => {
+                    let role = &capture.format_role(variant, &self.config);
                     buffer.substitute(
-                        capture.format_role(variant, &self.config),
+                        &role.chars().collect(),
                         capture.start,
                         capture.end,
                     );
@@ -105,7 +73,8 @@ impl Generator {
             }
         }
 
-        Ok(buffer)
+        Ok(buffer.into_iter().collect())
+        // Ok(buffer)
     }
 }
 
@@ -123,7 +92,7 @@ mod tests {
     }
 
     #[test]
-    fn format_rgb() -> Result<(), ParseError> {
+    fn generate_rgb() -> Result<(), ParseError> {
         assert_eq!(
             generate_variant(Variant::Moon, "$love:rgb")?,
             "235, 111, 146"

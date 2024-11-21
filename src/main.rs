@@ -1,38 +1,15 @@
 use clap::Parser;
+use std::fs;
+
 use rosepine::{
-    generate::{Config, Delimiter, Generator},
-    format::Format,
+    config::{Args, Config},
+    generate::Generator,
     palette::Variant,
 };
-use std::{fs, path::PathBuf};
-
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    #[clap(long, short, default_value = "dist")]
-    out_dir: PathBuf,
-
-    #[clap(long, short, default_value = "hex")]
-    format: Format,
-
-    #[clap(long, short, default_value = "parenthesis")]
-    delimiter: Delimiter,
-
-    #[clap(long, short, default_value = "|")]
-    seperator: char,
-
-    #[clap(long, short)]
-    variant: Option<Variant>,
-
-    #[clap(long, short, default_value = "$")]
-    prefix: char,
-
-    template_file: PathBuf,
-}
 
 fn main() {
     let args = Args::parse();
-    let config = Config::new(args.prefix, args.format, args.seperator, args.delimiter);
+    let config = Config::from(&args);
 
     let content = fs::read_to_string(&args.template_file).unwrap();
     let generator = Generator::new(config);

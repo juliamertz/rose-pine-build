@@ -1,7 +1,10 @@
+pub mod format;
 pub mod generate;
 pub use palette;
+pub mod config;
+pub mod parse;
 
-pub mod format;
-mod parse;
 mod utils;
-mod casing;
+
+#[cfg(test)]
+mod parse_test;
