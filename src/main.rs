@@ -1,5 +1,8 @@
 use clap::Parser;
-use rosepine::{generate::Generator, palette::Variant, Config, Format};
+use rosepine::{
+    generate::{Config, Format, Generator},
+    palette::Variant,
+};
 use std::{fs, path::PathBuf};
 
 #[derive(Parser)]

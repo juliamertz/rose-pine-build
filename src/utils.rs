@@ -10,10 +10,6 @@ impl<T> Reversed for Vec<T> {
     }
 }
 
-pub(crate) fn rgb(r: f32, g: f32, b: f32) -> Rgb {
-    Rgb::from(r, g, b)
-}
-
 pub(crate) trait Substitutable {
     fn substitute(&mut self, replacement: Self, start: usize, end: usize);
 }
@@ -29,11 +25,13 @@ impl Substitutable for String {
 pub(crate) trait ColorValues {
     fn color_values(&self) -> Vec<f32>;
 }
+
 impl ColorValues for Rgb {
     fn color_values(&self) -> Vec<f32> {
         vec![self.get_red(), self.get_green(), self.get_blue()]
     }
 }
+
 impl ColorValues for Hsl {
     fn color_values(&self) -> Vec<f32> {
         vec![
