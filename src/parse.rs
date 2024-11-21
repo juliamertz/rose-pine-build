@@ -227,11 +227,14 @@ fn scan_role(p: &mut Parser) -> Result<Role, ParseError> {
     Ok(role)
 }
 
-fn parse_capture(p: &mut Parser, _config: &Config) -> Result<Capture, ParseError> {
+fn parse_capture(p: &mut Parser, config: &Config) -> Result<Capture, ParseError> {
     let mut roles = VariantRoles::new();
-
-    println!("{p}");
     let start = p.index.expect("index to be set");
+
+    if p.current() != Some(&config.prefix) {
+        return Err(ParseError::PrefixExpected);
+    }
+    p.advance();
 
     if p.current() == Some(&'(') {
         p.advance();
@@ -251,16 +254,13 @@ fn parse_capture(p: &mut Parser, _config: &Config) -> Result<Capture, ParseError
             return Err(ParseError::CloseParenExpected);
         }
 
-        p.advance_n(1)
+        p.advance();
     } else {
-        println!("{p}");
-        dbg!(p.current(), p.lookhead());
         roles.push(scan_role(p)?);
     }
 
     let format = if p.lookhead() == Some(&':') {
         p.advance_n(2);
-        println!("{p}");
         p.match_format().inspect(|format| {
             p.advance_n(format.to_string().len() - 1);
         })
@@ -295,7 +295,7 @@ fn parse_capture(p: &mut Parser, _config: &Config) -> Result<Capture, ParseError
         format,
         opacity,
         start,
-        end: p.index.unwrap(),
+        end: p.index.unwrap() + 1,
     })
 }
 
@@ -304,8 +304,7 @@ pub fn parse_template(content: &str, config: &Config) -> Vec<Result<Capture, Par
     let mut captures = vec![];
 
     while parser.lookhead().is_some() {
-        if parser.current() == Some(&'$') {
-            parser.advance();
+        if parser.current() == Some(&config.prefix) {
             let capture = parse_capture(&mut parser, config);
             captures.push(capture);
         }
@@ -331,27 +330,27 @@ mod tests {
     fn template_parsing() -> Result<(), ParseError> {
         let asserts = [
             (
-                "base:rgb",
+                "$base:rgb",
                 Capture::new(vec![Role::Base], Some(Format::Rgb), None),
             ),
             (
-                "surface:hsl",
+                "$surface:hsl",
                 Capture::new(vec![Role::Surface], Some(Format::Hsl), None),
             ),
             (
-                "highlightMed:ahex_ns/80",
+                "$highlightMed:ahex_ns/80",
                 Capture::new(vec![Role::HighlightMed], Some(Format::AhexNs), Some(80)),
             ),
             (
-                "(foam|pine):hex",
+                "$(foam|pine):hex",
                 Capture::new(vec![Role::Foam, Role::Pine], Some(Format::Hex), None),
             ),
             (
-                "(rose|love):hsl/50",
+                "$(rose|love):hsl/50",
                 Capture::new(vec![Role::Rose, Role::Love], Some(Format::Hsl), Some(50)),
             ),
             (
-                "(iris|foam|pine):hsl_function/75",
+                "$(iris|foam|pine):hsl_function/75",
                 Capture::new(
                     vec![Role::Iris, Role::Foam, Role::Pine],
                     Some(Format::HslFunction),
