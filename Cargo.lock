@@ -91,7 +91,6 @@ name = "rosepine"
 version = "0.1.0"
 dependencies = [
  "clap",
- "colors-transform",
  "heck",
  "palette",
  "strum",

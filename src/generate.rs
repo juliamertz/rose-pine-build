@@ -1,14 +1,18 @@
 use clap::ValueEnum;
-use colors_transform::{Color, Rgb};
+use palette::ColorValues;
+// use
 use std::char;
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString, VariantNames};
 
 use crate::{
-    palette::{Role, Variant},
+    palette::{
+        transform::{Color, Rgb},
+        Variant,
+    },
     parse::{self, ParseError},
-    utils::{ColorValues, Reversed, Substitutable},
+    utils::Substitutable,
 };
 
 /// HashMap containing output strings for each variant

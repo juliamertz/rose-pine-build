@@ -3,9 +3,29 @@ mod variant;
 pub use colors_transform as transform;
 pub use variant::*;
 
-use colors_transform::Rgb;
+use colors_transform::{Color, Rgb};
 use std::collections::HashMap;
 use strum_macros::{Display, EnumIter, EnumString, VariantNames};
+
+pub trait ColorValues {
+    fn color_values(&self) -> Vec<f32>;
+}
+
+impl ColorValues for transform::Rgb {
+    fn color_values(&self) -> Vec<f32> {
+        vec![self.get_red(), self.get_green(), self.get_blue()]
+    }
+}
+
+impl ColorValues for transform::Hsl {
+    fn color_values(&self) -> Vec<f32> {
+        vec![
+            self.get_hue().round(),
+            self.get_saturation().round(),
+            self.get_lightness().round(),
+        ]
+    }
+}
 
 pub struct Metadata {
     pub variant: Variant,
