@@ -103,7 +103,7 @@ mod tests {
         );
         assert_eq!(
             generate_variant(Variant::Moon, "$pine:rgb_function/80")?,
-            "rgba(62, 143, 176, 0.8)"
+            "rgb(62, 143, 176, 0.8)"
         );
         Ok(())
     }
@@ -133,11 +133,11 @@ mod tests {
     fn opacity() -> Result<(), ParseError> {
         assert_eq!(
             generate_variant(Variant::Moon, "$love:rgb_function/50")?,
-            "rgba(235, 111, 146, 0.5)"
+            "rgb(235, 111, 146, 0.5)"
         );
         assert_eq!(
             generate_variant(Variant::Moon, "$love:hsl_function/50")?,
-            "hsla(343, 76%, 68%, 0.5%)"
+            "hsl(343, 76%, 68%, 0.5)"
         );
         assert_eq!(
             generate_variant(Variant::Moon, "$love:hex/100")?,

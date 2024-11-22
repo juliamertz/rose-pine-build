@@ -2,22 +2,10 @@ use crate::palette::transform::Rgb;
 use clap::ValueEnum;
 use palette::{transform::Color, ColorValues};
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumIter, EnumString, VariantNames};
+use strum_macros::{Display, EnumIter};
 
 #[derive(
-    EnumString,
-    EnumIter,
-    VariantNames,
-    Display,
-    Debug,
-    ValueEnum,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    Default,
+    EnumIter, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Serialize, Deserialize, Default,
 )]
 #[strum(serialize_all = "snake_case")]
 pub enum Format {
@@ -94,18 +82,14 @@ impl Format {
             | Self::AhexNs
             | Self::RgbAnsi => chunks,
             Self::RgbArray | Self::HslArray => format!("[{chunks}]"),
-            Self::RgbFunction | Self::HslFunction => {
-                let fn_name = match self {
+            Self::RgbFunction | Self::HslFunction => format!(
+                "{}({chunks})",
+                match self {
                     Self::RgbFunction => "rgb",
                     Self::HslFunction => "hsl",
                     _ => unreachable!(),
-                };
-                let fn_name = match alpha.is_some() {
-                    true => &format!("{fn_name}a"),
-                    false => fn_name,
-                };
-                format!("{fn_name}({chunks})")
-            }
+                }
+            ),
         }
     }
 
@@ -129,15 +113,12 @@ impl Format {
     }
 
     fn format_chunk(&self, chunk: f32, i: usize) -> String {
-        if self.is_hsl() && (i > 0) {
-            return format!("{chunk}%");
-        }
-
-        match self {
-            Self::Hex | Self::HexNs | Self::Ahex | Self::AhexNs => {
-                format!("{:02X}", chunk.round() as u8)
-            }
-            _ => chunk.to_string(),
+        if self.is_hsl() && (i > 0 && i < 3) {
+            format!("{chunk}%")
+        } else if self.is_hex() {
+            format!("{:02X}", chunk.round() as u8)
+        } else {
+            chunk.to_string()
         }
     }
 }
@@ -156,14 +137,14 @@ mod tests {
     fn format_rgb() {
         assert_format(Format::Rgb, None, "235, 111, 146");
         assert_format(Format::RgbFunction, None, "rgb(235, 111, 146)");
-        assert_format(Format::RgbFunction, Some(80.0), "rgba(235, 111, 146, 0.8)");
+        assert_format(Format::RgbFunction, Some(80.0), "rgb(235, 111, 146, 0.8)");
         assert_format(Format::RgbArray, None, "[235, 111, 146]");
     }
 
     #[test]
     fn format_hsl() {
         assert_format(Format::HslFunction, None, "hsl(343, 76%, 68%)");
-        assert_format(Format::HslFunction, Some(70.0), "hsla(343, 76%, 68%, 0.7%)");
+        assert_format(Format::HslFunction, Some(70.0), "hsl(343, 76%, 68%, 0.7)");
     }
 
     #[test]
