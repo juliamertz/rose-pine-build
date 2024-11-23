@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use strum_macros::{Display, EnumIter};
+
 pub(crate) trait Substitutable {
     fn substitute(&mut self, replacement: &Self, start: usize, end: usize);
 }
@@ -16,7 +18,7 @@ impl Substitutable for Vec<char> {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumIter, Display)]
 pub enum Case {
     Snake,
     Kebab,

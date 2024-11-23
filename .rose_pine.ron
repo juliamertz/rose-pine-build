@@ -1,0 +1,11 @@
+(
+    parse: (
+        prefix: '$',
+        seperator: '|',
+        delimiter: Parenthesis,
+    ),
+    generate: (
+        format: Rgb,
+        strip_spaces: false,
+    ),
+)

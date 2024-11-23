@@ -1,3 +1,10 @@
+use crate::{
+    config::Config,
+    format::Format,
+    generate::Options,
+    palette::{transform::Rgb, Role, Variant},
+    utils::{Case, Casing},
+};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -6,13 +13,14 @@ use std::{
     vec,
 };
 use strum::IntoEnumIterator;
+use strum_macros::{Display, EnumIter};
 
-use crate::{
-    config::Config,
-    format::Format,
-    palette::{transform::Rgb, Role, Variant},
-    utils::{Case, Casing},
-};
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ParseOptions {
+    pub prefix: char,
+    pub seperator: char,
+    pub delimiter: Delimiter,
+}
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, ValueEnum, Default)]
 pub enum Delimiter {
@@ -23,54 +31,45 @@ pub enum Delimiter {
     SqaureBracket,
 }
 
-impl Delimiter {
-    pub fn left(&self) -> char {
-        Side::Left(*self).into()
-    }
-    pub fn right(&self) -> char {
-        Side::Right(*self).into()
-    }
+enum Side<T> {
+    Open(T),
+    Close(T),
 }
 
-pub enum Side<T> {
-    Left(T),
-    Right(T),
+#[derive(Debug, PartialEq, Clone)]
+pub enum Template {
+    Metadata(MetadataKey, Option<Case>),
+    Role(RoleCaptures, Option<Format>, Option<u16>),
 }
 
-impl From<Side<Delimiter>> for char {
-    fn from(value: Side<Delimiter>) -> Self {
-        match value {
-            Side::Left(delimiter) => match delimiter {
-                Delimiter::Parenthesis => '(',
-                Delimiter::CurlyBracket => '{',
-                Delimiter::AngleBracket => '<',
-                Delimiter::SqaureBracket => '[',
-            },
-            Side::Right(delimiter) => match delimiter {
-                Delimiter::Parenthesis => ')',
-                Delimiter::CurlyBracket => '}',
-                Delimiter::AngleBracket => '>',
-                Delimiter::SqaureBracket => ']',
-            },
-        }
-    }
+#[derive(Debug, PartialEq, Clone)]
+pub struct Capture {
+    pub template: Template,
+    pub start: usize,
+    pub end: usize,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ParseOptions {
-    pub prefix: char,
-    pub seperator: char,
-    pub delimiter: Delimiter,
+#[derive(Debug, Copy, Clone, PartialEq, Display, EnumIter)]
+pub enum MetadataKey {
+    Id,
+    Name,
+    Description,
+    Key,
 }
 
-impl ParseOptions {
-    pub fn new(prefix: char, seperator: char, delimiter: Delimiter) -> Self {
-        Self {
-            prefix,
-            seperator,
-            delimiter,
-        }
-    }
+#[derive(Debug)]
+pub enum ParseError {
+    VariantNotFound,
+    PrefixExpected,
+    OpenDelimExpected,
+    CloseDelimExpected,
+    InvalidOpacity(ParseIntError),
+}
+
+struct Lexer {
+    pub index: usize,
+    pub content: Vec<char>,
+    pub config: ParseOptions,
 }
 
 impl Default for ParseOptions {
@@ -83,52 +82,66 @@ impl Default for ParseOptions {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Capture {
-    pub role: RoleVariants,
-    pub format: Option<Format>,
-    pub opacity: Option<u16>,
-    pub start: usize,
-    pub end: usize,
+impl Capture {
+    pub fn format(&self, variant: &Variant, options: &Options) -> String {
+        match self.template {
+            Template::Role(ref role, format, alpha) => {
+                let format = match format {
+                    Some(ref format) => format,
+                    None => &options.format,
+                };
+
+                format.format_color(role.get_color(variant), alpha)
+            }
+            Template::Metadata(key, case) => case.map_or(key.to_string(), |c| key.to_case(c)),
+        }
+    }
 }
 
-#[derive(Debug)]
-pub enum ParseError {
-    VariantNotFound,
-    PrefixExpected,
-    OpenDelimExpected,
-    CloseDelimExpected,
-    InvalidOpacity(ParseIntError),
+impl Delimiter {
+    pub fn open(&self) -> char {
+        Side::Open(*self).into()
+    }
+    pub fn close(&self) -> char {
+        Side::Close(*self).into()
+    }
 }
 
-pub(crate) struct Lexer {
-    index: usize,
-    content: Vec<char>,
-    config: ParseOptions,
+impl From<Side<Delimiter>> for char {
+    fn from(value: Side<Delimiter>) -> Self {
+        match value {
+            Side::Open(delimiter) => match delimiter {
+                Delimiter::Parenthesis => '(',
+                Delimiter::CurlyBracket => '{',
+                Delimiter::AngleBracket => '<',
+                Delimiter::SqaureBracket => '[',
+            },
+            Side::Close(delimiter) => match delimiter {
+                Delimiter::Parenthesis => ')',
+                Delimiter::CurlyBracket => '}',
+                Delimiter::AngleBracket => '>',
+                Delimiter::SqaureBracket => ']',
+            },
+        }
+    }
 }
 
 impl Debug for Lexer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(
-            f,
-            "index: {}, config: {:?}",
-            self.index,
-            self.config
-        )?;
+        writeln!(f, "index: {}, config: {:?}", self.index, self.config)?;
         writeln!(f, "{}⬇", " ".repeat(self.index))?;
         writeln!(f, "{}", self.content.iter().collect::<String>())
     }
 }
 
 impl Lexer {
-    pub(crate) fn new(content: &str, config: &Config) -> Self {
-         Self {
+    fn new(content: &str, config: &Config) -> Self {
+        Self {
             index: 0,
             content: content.chars().collect(),
             config: config.parse.clone(),
         }
     }
-
 
     fn current(&self) -> Option<&char> {
         self.content.get(self.index)
@@ -220,8 +233,8 @@ where
     }
 }
 
-pub(crate) fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
-    let mut roles = RoleVariants::new();
+fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
+    let mut roles = RoleCaptures::new();
 
     let start = lexer.index;
     if lexer.current() != Some(&lexer.config.prefix) {
@@ -229,8 +242,23 @@ pub(crate) fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
     }
     lexer.advance();
 
+    if let Ok(key) = parse_enum_variant::<MetadataKey>(lexer, Case::Snake) {
+        let format = if lexer.current() == Some(&':') {
+            lexer.advance();
+            Some(parse_enum_variant::<Case>(lexer, Case::Snake)?)
+        } else {
+            None
+        };
+
+        return Ok(Capture {
+            template: Template::Metadata(key, format),
+            start,
+            end: lexer.index,
+        });
+    }
+
     // Grouped roles
-    if lexer.current() == Some(&lexer.config.delimiter.left()) {
+    if lexer.current() == Some(&lexer.config.delimiter.open()) {
         lexer.advance();
         lexer.skip_whitespace();
         roles.push(parse_enum_variant(lexer, Case::Snake)?);
@@ -250,7 +278,7 @@ pub(crate) fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
             lexer.skip_whitespace();
         }
 
-        if lexer.current() != Some(&lexer.config.delimiter.right()) {
+        if lexer.current() != Some(&lexer.config.delimiter.close()) {
             return Err(ParseError::CloseDelimExpected);
         }
         lexer.advance();
@@ -294,45 +322,28 @@ pub(crate) fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
     };
 
     Ok(Capture {
-        role: roles,
-        format,
-        opacity,
+        template: Template::Role(roles, format, opacity),
         start,
         end: lexer.index,
     })
 }
 
-impl Capture {
-    pub fn format_role(&self, variant: Variant, config: &Config) -> String {
-        let format = match self.format {
-            Some(ref format) => format,
-            None => &config.generate.format,
-        };
-
-        format.format_color(self.role.get_color(&variant), self.opacity)
-    }
-}
-
 #[derive(Debug, Clone, PartialEq)]
-pub struct RoleVariants {
-    pub roles: Vec<Role>,
-}
+pub struct RoleCaptures(Vec<Role>);
 
-impl RoleVariants {
+impl RoleCaptures {
     fn new() -> Self {
-        Self {
-            roles: Vec::with_capacity(3),
-        }
+        Self(Vec::with_capacity(3))
     }
 
     fn push(&mut self, val: Role) {
-        if self.roles.len() < 3 {
-            self.roles.push(val)
+        if self.0.len() < 3 {
+            self.0.push(val)
         }
     }
 
     fn get_color(&self, variant: &Variant) -> Rgb {
-        match self.roles.as_slice() {
+        match self.0.as_slice() {
             [role] => role,
             [dark, light] => {
                 if variant.is_dark() {
@@ -351,3 +362,6 @@ impl RoleVariants {
         .get_color(variant)
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -44,11 +44,7 @@ impl Variant {
     }
 
     pub fn colors(&self) -> HashMap<Role, Rgb> {
-        let mut map = HashMap::new();
-        for role in Role::iter() {
-            map.insert(role, role.get_color(self));
-        }
-        map
+        Role::iter().map(|r| (r, r.get_color(self))).collect()
     }
 
     pub fn get_color(&self, role: Role) -> Rgb {

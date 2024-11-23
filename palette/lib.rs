@@ -1,10 +1,8 @@
-mod variant;
-
+pub mod variant;
 pub use colors_transform as transform;
 pub use variant::*;
 
 use colors_transform::{Color, Rgb};
-use std::collections::HashMap;
 use strum_macros::{Display, EnumIter, EnumString, VariantNames};
 
 pub trait ColorValues {
@@ -32,7 +30,6 @@ pub struct Metadata {
     pub id: String,
     pub key: String,
     pub name: String,
-    pub colors: HashMap<Role, Rgb>,
 }
 
 impl From<&Variant> for Metadata {
@@ -41,7 +38,6 @@ impl From<&Variant> for Metadata {
             id: value.id(),
             key: value.key(),
             name: value.name(),
-            colors: value.colors(),
             variant: *value,
         }
     }
