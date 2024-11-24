@@ -61,12 +61,12 @@ impl From<&Args> for Config {
     fn from(value: &Args) -> Self {
         Config {
             parse: parse::ParseOptions {
-                prefix: value.prefix.unwrap_or_default(),
-                seperator: value.seperator.unwrap_or_default(),
-                delimiter: value.delimiter.unwrap_or_default(),
+                prefix: value.prefix.unwrap_or('$'),
+                seperator: value.seperator.unwrap_or('|'),
+                delimiter: value.delimiter.unwrap_or(Delimiter::Parenthesis),
             },
             generate: generate::Options {
-                format: value.format.unwrap_or_default(),
+                format: value.format.unwrap_or(Format::Hex),
                 strip_spaces: false,
             },
         }
