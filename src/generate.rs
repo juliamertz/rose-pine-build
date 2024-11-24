@@ -5,10 +5,12 @@ use crate::{
     parse::{self, Capture},
     utils::Substitutable,
 };
-use serde::{Deserialize, Serialize};
+use palette::Metadata;
+use serde::Serialize;
 use strum::IntoEnumIterator;
+use tera::{Context, Tera};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Options {
     pub format: Format,
     pub strip_spaces: bool,
@@ -48,6 +50,34 @@ pub fn generate_variant(variant: &Variant, config: &Config, content: &str) -> St
         variant,
         content,
     )
+}
+
+fn create_context(variant: &Variant) -> Context {
+    let mut ctx = Context::new();
+    let meta: Metadata = variant.into();
+    ctx.insert("metadata", &meta);
+    for (role, color) in variant.colors() {
+        ctx.insert(role, &color);
+    }
+
+    ctx
+}
+
+pub fn render_template(variant: &Variant, template: &str) -> tera::Result<String> {
+    Tera::one_off(template, &create_context(variant), true)
+}
+
+pub fn render_templates(template: &str) -> tera::Result<Vec<(Variant, String)>> {
+    let mut result = vec![];
+
+    for variant in Variant::iter() {
+        result.push((
+            variant,
+            Tera::one_off(template, &create_context(&variant), true)?,
+        ))
+    }
+
+    Ok(result)
 }
 
 pub fn generate_variants(config: &Config, content: &str) -> Vec<(Variant, String)> {

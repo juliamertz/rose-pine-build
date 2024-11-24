@@ -1,12 +1,9 @@
-use crate::palette::transform::Rgb;
 use clap::ValueEnum;
-use palette::{transform::Color, ColorValues};
-use serde::{Deserialize, Serialize};
+use palette::{Color, ColorValues};
+use serde::Serialize;
 use strum_macros::{Display, EnumIter};
 
-#[derive(
-    EnumIter, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Serialize, Deserialize, Default,
-)]
+#[derive(EnumIter, Display, Debug, ValueEnum, Clone, Copy, PartialEq, Serialize, Default)]
 #[strum(serialize_all = "snake_case")]
 pub enum Format {
     #[default]
@@ -59,10 +56,10 @@ impl Format {
         matches!(self, Self::Hex | Self::HexNs | Self::Ahex | Self::AhexNs)
     }
 
-    pub fn format_color(&self, color: Rgb, alpha: Option<impl Into<f32> + Copy>) -> String {
+    pub fn format_color(&self, color: Color, alpha: Option<impl Into<f32> + Copy>) -> String {
         let mut chunks = match self.is_hsl() {
-            true => color.to_hsl().color_values(),
-            false => color.color_values(),
+            true => color.hsl.color_values(),
+            false => color.rgb.color_values(),
         };
 
         if let Some(alpha) = alpha.map(|a| a.into() / 100.0) {

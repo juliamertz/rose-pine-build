@@ -1,30 +1,66 @@
 pub mod variant;
-pub use colors_transform as transform;
 pub use variant::*;
 
-use colors_transform::{Color, Rgb};
+// use colors_transform::{Color, Rgb};
+use serde::Serialize;
 use strum_macros::{Display, EnumIter, EnumString, VariantNames};
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Color {
+    pub rgb: Rgb,
+    pub hsl: Hsl,
+    pub hex: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct Rgb {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl From<Rgb> for (u8, u8, u8) {
+    fn from(val: Rgb) -> Self {
+        (val.r, val.g, val.b)
+    }
+}
+
+impl Rgb {
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct Hsl {
+    pub h: u16,
+    pub s: u8,
+    pub l: u8,
+}
+
+impl Hsl {
+    pub fn new(h: u16, s: u8, l: u8) -> Self {
+        Self { h, s, l }
+    }
+}
 
 pub trait ColorValues {
     fn color_values(&self) -> Vec<f32>;
 }
 
-impl ColorValues for transform::Rgb {
+impl ColorValues for Rgb {
     fn color_values(&self) -> Vec<f32> {
-        vec![self.get_red(), self.get_green(), self.get_blue()]
+        vec![self.r as f32, self.g as f32, self.b as f32]
     }
 }
 
-impl ColorValues for transform::Hsl {
+impl ColorValues for Hsl {
     fn color_values(&self) -> Vec<f32> {
-        vec![
-            self.get_hue().round(),
-            self.get_saturation().round(),
-            self.get_lightness().round(),
-        ]
+        vec![self.h as f32, self.s as f32, self.l as f32]
     }
 }
 
+#[derive(Debug, Serialize)]
 pub struct Metadata {
     pub variant: Variant,
     pub id: String,
@@ -43,7 +79,9 @@ impl From<&Variant> for Metadata {
     }
 }
 
-#[derive(Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString, Hash)]
+#[derive(
+    Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString, Hash, Serialize,
+)]
 #[strum(serialize_all = "camelCase")]
 pub enum Role {
     Base,
@@ -64,7 +102,19 @@ pub enum Role {
 }
 
 impl Role {
-    pub fn get_color(&self, variant: &Variant) -> Rgb {
-        variant.get_color(*self)
+    pub fn get_rgb(&self, variant: &Variant) -> Rgb {
+        variant.get_rgb(*self)
+    }
+    pub fn get_hsl(&self, variant: &Variant) -> Hsl {
+        variant.get_hsl(*self)
+    }
+
+    pub fn get_color(&self, v: &Variant) -> Color {
+        let rgb = self.get_rgb(v);
+        Color {
+            rgb,
+            hsl: self.get_hsl(v),
+            hex: format!("{:02x}{:02x}{:02x}", rgb.r, rgb.g, rgb.b),
+        }
     }
 }

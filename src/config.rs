@@ -5,16 +5,14 @@ use crate::{
     parse::{self, Delimiter},
 };
 
-use clap::{builder::{styling::AnsiColor, Styles}, Parser};
-use ron::ser::PrettyConfig;
-use serde::{Deserialize, Serialize};
-use std::{
-    fs,
-    io::{Error, ErrorKind, Result},
-    path::{Path, PathBuf},
+use clap::{
+    builder::{styling::AnsiColor, Styles},
+    Parser,
 };
+use serde::Serialize;
+use std::path::PathBuf;
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct Config {
     pub parse: parse::ParseOptions,
     pub generate: generate::Options,
@@ -83,27 +81,5 @@ impl From<&Args> for Config {
                 force_alpha: value.force_alpha,
             },
         }
-    }
-}
-
-impl Config {
-    pub fn read(path: impl AsRef<Path>) -> Result<Config> {
-        if path.as_ref().exists() {
-            let data = fs::read_to_string(path).expect("to read config");
-            let parsed: Config =
-                ron::from_str(&data).map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
-            return Ok(parsed);
-        }
-
-        Err(Error::new(
-            ErrorKind::NotFound,
-            "Unable to read config file from default paths",
-        ))
-    }
-
-    pub fn write(&self, path: impl AsRef<Path>) -> Result<()> {
-        let config = PrettyConfig::new().escape_strings(false);
-        let contents = ron::ser::to_string_pretty(self, config).unwrap();
-        fs::write(path, contents)
     }
 }

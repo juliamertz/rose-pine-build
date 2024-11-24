@@ -2,11 +2,12 @@ use crate::{
     config::Config,
     format::Format,
     generate::Options,
-    palette::{transform::Rgb, Role, Variant},
+    palette::{Role, Variant},
     utils::{Case, Casing},
 };
 use clap::ValueEnum;
-use serde::{Deserialize, Serialize};
+use palette::Color;
+use serde::Serialize;
 use std::{
     fmt::{Debug, Display},
     num::ParseIntError,
@@ -15,14 +16,14 @@ use std::{
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ParseOptions {
     pub prefix: char,
     pub seperator: char,
     pub delimiter: Delimiter,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, ValueEnum, Default)]
+#[derive(Clone, Copy, Debug, Serialize, ValueEnum, Default)]
 pub enum Delimiter {
     #[default]
     Parenthesis,
@@ -348,7 +349,7 @@ impl RoleCaptures {
         }
     }
 
-    fn get_color(&self, variant: &Variant) -> Rgb {
+    fn get_color(&self, variant: &Variant) -> Color {
         match self.0.as_slice() {
             [role] => role,
             [dark, light] => {

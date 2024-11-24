@@ -1,7 +1,4 @@
-use clap::{
-    builder::styling::{AnsiColor, Styles},
-    Parser,
-};
+use clap::Parser;
 use rosepine::{
     config::{Args, Config},
     generate,
@@ -27,14 +24,25 @@ fn main() {
 
     _ = fs::create_dir_all(&args.out);
 
+    // TODO: refactor this mess
+    let is_tera = filetype == ".tera";
+
     if let Some(variant) = args.variant {
-        fs::write(
-            filename(variant),
-            generate::generate_variant(&variant, &config, &content),
-        )
-        .expect("to write");
+        let result = if is_tera {
+            generate::render_template(&variant, &content).unwrap()
+        } else {
+            generate::generate_variant(&variant, &config, &content)
+        };
+
+        fs::write(filename(variant), result).expect("to write");
     } else {
-        for (variant, content) in generate::generate_variants(&config, &content) {
+        let variants = if is_tera {
+            generate::render_templates(&content).unwrap()
+        } else {
+            generate::generate_variants(&config, &content)
+        };
+
+        for (variant, content) in variants {
             fs::write(filename(variant), content).expect("to write");
         }
     }
