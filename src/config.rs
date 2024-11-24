@@ -5,7 +5,7 @@ use crate::{
     parse::{self, Delimiter},
 };
 
-use clap::Parser;
+use clap::{builder::{styling::AnsiColor, Styles}, Parser};
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -20,8 +20,16 @@ pub struct Config {
     pub generate: generate::Options,
 }
 
+fn styles() -> Styles {
+    Styles::styled()
+        .header(AnsiColor::Magenta.on_default())
+        .usage(AnsiColor::Blue.on_default())
+        .literal(AnsiColor::White.on_default())
+        .placeholder(AnsiColor::Yellow.on_default())
+}
+
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None, styles = styles())]
 pub struct Args {
     #[clap(long, short, default_value = "dist")]
     pub out: PathBuf,
