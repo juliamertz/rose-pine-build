@@ -91,6 +91,12 @@ impl Capture {
                     None => &options.format,
                 };
 
+                let alpha = if options.force_alpha {
+                    Some(alpha.unwrap_or(100))
+                } else {
+                    alpha
+                };
+
                 format.format_color(role.get_color(variant), alpha)
             }
             Template::Metadata(key, case) => case.map_or(key.to_string(), |c| key.to_case(c)),

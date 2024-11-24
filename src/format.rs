@@ -119,7 +119,11 @@ impl Format {
     fn format_chunk(&self, chunk: f32, i: usize) -> String {
         if *self == Self::Ron {
             let tags = ["red", "green", "blue", "alpha"];
-            let chunk = if i == 3 { chunk } else { chunk / 255.0 };
+            let chunk = if i == 3 {
+                format!("{chunk:.1}")
+            } else {
+                format!("{}", chunk / 255.0)
+            };
             return format!("{}: {}", tags[i], chunk);
         }
 
@@ -179,6 +183,11 @@ mod tests {
             Format::Ron,
             Some(50.0),
             "( red: 0.92156863, green: 0.43529412, blue: 0.57254905, alpha: 0.5 )",
+        );
+        assert_format(
+            Format::Ron,
+            Some(100.0),
+            "( red: 0.92156863, green: 0.43529412, blue: 0.57254905, alpha: 1.0 )",
         );
     }
 }

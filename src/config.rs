@@ -49,6 +49,9 @@ pub struct Args {
     #[clap(long, short)]
     pub variant: Option<Variant>,
 
+    #[clap(long)]
+    pub force_alpha: bool,
+
     #[clap(long, short)]
     pub prefix: Option<char>,
 
@@ -62,6 +65,7 @@ impl Args {
             && self.seperator.is_none()
             && self.variant.is_none()
             && self.prefix.is_none()
+            && !self.force_alpha
     }
 }
 
@@ -76,6 +80,7 @@ impl From<&Args> for Config {
             generate: generate::Options {
                 format: value.format.unwrap_or(Format::Hex),
                 strip_spaces: false,
+                force_alpha: value.force_alpha,
             },
         }
     }

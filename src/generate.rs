@@ -12,6 +12,7 @@ use strum::IntoEnumIterator;
 pub struct Options {
     pub format: Format,
     pub strip_spaces: bool,
+    pub force_alpha: bool,
 }
 
 impl Default for Options {
@@ -19,6 +20,7 @@ impl Default for Options {
         Self {
             format: Format::Hex,
             strip_spaces: false,
+            force_alpha: false,
         }
     }
 }
