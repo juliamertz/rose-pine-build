@@ -28,33 +28,40 @@ fn styles() -> Styles {
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None, styles = styles())]
+/// Theme generator for Rosé Pine
 pub struct Args {
     #[clap(long, short, default_value = "dist")]
     pub out: PathBuf,
 
     #[clap(long, short)]
+    /// render with tera templating engine
+    pub tera: bool,
+
+    #[clap(long, short)]
+    /// default color formatting
     pub format: Option<Format>,
 
     #[clap(long, short)]
+    /// bracket type for role groups
     pub delimiter: Option<Delimiter>,
 
     #[clap(long, short)]
+    /// charachter to use as seperator in role groups
     pub seperator: Option<char>,
 
     #[clap(long, short)]
+    /// only generate a specific variant
     pub variant: Option<Variant>,
-
-    #[clap(long, short)]
-    /// render with tera templating engine
-    pub tera: bool,
 
     #[clap(long)]
     /// always add alpha values
     pub force_alpha: bool,
 
     #[clap(long, short)]
+    /// variable prefix
     pub prefix: Option<char>,
 
+    /// path to template file
     pub template_file: PathBuf,
 }
 
