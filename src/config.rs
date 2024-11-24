@@ -32,9 +32,6 @@ pub struct Args {
     #[clap(long, short, default_value = "dist")]
     pub out: PathBuf,
 
-    #[clap(long)]
-    pub write_config: bool,
-
     #[clap(long, short)]
     pub format: Option<Format>,
 
@@ -47,7 +44,12 @@ pub struct Args {
     #[clap(long, short)]
     pub variant: Option<Variant>,
 
+    #[clap(long, short)]
+    /// render with tera templating engine
+    pub tera: bool,
+
     #[clap(long)]
+    /// always add alpha values
     pub force_alpha: bool,
 
     #[clap(long, short)]

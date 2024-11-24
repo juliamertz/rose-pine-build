@@ -24,11 +24,8 @@ fn main() {
 
     _ = fs::create_dir_all(&args.out);
 
-    // TODO: refactor this mess
-    let is_tera = filetype == ".tera";
-
     if let Some(variant) = args.variant {
-        let result = if is_tera {
+        let result = if args.tera {
             generate::render_template(&variant, &content).unwrap()
         } else {
             generate::generate_variant(&variant, &config, &content)
@@ -36,7 +33,7 @@ fn main() {
 
         fs::write(filename(variant), result).expect("to write");
     } else {
-        let variants = if is_tera {
+        let variants = if args.tera {
             generate::render_templates(&content).unwrap()
         } else {
             generate::generate_variants(&config, &content)
