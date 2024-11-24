@@ -62,7 +62,6 @@ impl ColorValues for Hsl {
 
 #[derive(Debug, Serialize)]
 pub struct Metadata {
-    pub variant: Variant,
     pub id: String,
     pub key: String,
     pub name: String,
@@ -74,7 +73,6 @@ impl From<&Variant> for Metadata {
             id: value.id(),
             key: value.key(),
             name: value.name(),
-            variant: *value,
         }
     }
 }
