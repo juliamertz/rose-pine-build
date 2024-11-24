@@ -100,7 +100,20 @@ impl Capture {
 
                 format.format_color(role.get_color(variant), alpha)
             }
-            Template::Metadata(key, case) => case.map_or(key.to_string(), |c| key.to_case(c)),
+            Template::Metadata(key, case) => {
+                let meta = variant.metadata();
+                let value = match key {
+                    MetadataKey::Id => meta.id,
+                    MetadataKey::Name => meta.name,
+                    MetadataKey::Key => meta.key,
+                    MetadataKey::Description => env!("CARGO_PKG_DESCRIPTION").to_string(),
+                };
+
+                match case {
+                    Some(case) => value.to_case(case),
+                    None => value,
+                }
+            }
         }
     }
 }

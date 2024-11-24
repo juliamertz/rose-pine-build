@@ -163,6 +163,17 @@ mod tests {
         );
     }
 
+    #[test]
+    fn metadata() {
+        assert_eq!(generate_variant(Variant::Main, "$id"), "rose-pine");
+        assert_eq!(generate_variant(Variant::Moon, "$id"), "rose-pine-moon");
+        assert_eq!(generate_variant(Variant::Moon, "$id:snake"), "rose_pine_moon");
+        assert_eq!(generate_variant(Variant::Moon, "$id:camel"), "rosePineMoon");
+        assert_eq!(generate_variant(Variant::Moon, "$name"), "Rosé Pine Moon");
+        assert_eq!(generate_variant(Variant::Moon, "$name:lower"), "rosé pine moon");
+        assert_eq!(generate_variant(Variant::Main, "$description"), "All natural pine, faux fur and a bit of soho vibes for the classy minimalist");
+    }
+
     fn generate_variant(variant: Variant, content: &str) -> String {
         super::generate_variant(&variant, &Config::default(), content)
     }

@@ -18,14 +18,17 @@ impl Substitutable for Vec<char> {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, EnumIter, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumIter, Display,Default)]
 pub enum Case {
+    #[default]
     Snake,
     Kebab,
     Camel,
     Pascal,
     Title,
     Train,
+    Lower,
+    Upper,
 }
 
 pub trait Casing {
@@ -46,6 +49,8 @@ impl<T: ?Sized + Display> Casing for T {
             Case::Pascal => val.to_pascal_case(),
             Case::Title => val.to_title_case(),
             Case::Train => val.to_train_case(),
+            Case::Lower => val.to_lowercase(),
+            Case::Upper => val.to_uppercase(),
         }
     }
 }
