@@ -28,7 +28,7 @@ fn main() -> Result<()> {
 
         for file in fs::read_dir(&args.template_source)? {
             let file = file?;
-            let variants = generate::generate_template(&file.path(), &config, args.tera)?;
+            let variants = generate::generate_template(&file.path(), &config)?;
             for (variant, content) in variants {
                 let path = out_dir(variant).join(file.file_name());
                 fs::write(path, content)?;
@@ -39,7 +39,7 @@ fn main() -> Result<()> {
             format!(".{}", s.to_str().expect("valid string"))
         });
 
-        let variants = generate::generate_template(&args.template_source, &config, args.tera)?;
+        let variants = generate::generate_template(&args.template_source, &config)?;
         for (variant, content) in variants {
             let filename = format!("{}{}", variant.key(), filetype);
             let path = args.out.join(filename);

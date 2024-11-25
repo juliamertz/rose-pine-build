@@ -1,7 +1,6 @@
 use crate::{
     format::Format,
     generate::{self},
-    palette::Variant,
     parse::{self, Delimiter},
 };
 
@@ -14,6 +13,10 @@ use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct Config {
+    /// use tera templating engine
+    #[cfg(feature = "templating")]
+    pub tera: bool,
+
     pub parse: parse::ParseOptions,
     pub generate: generate::Options,
 }
@@ -33,6 +36,7 @@ pub struct Args {
     #[clap(long, short, default_value = "dist")]
     pub out: PathBuf,
 
+    #[cfg(feature = "templating")]
     #[clap(long, short)]
     /// render with tera templating engine
     pub tera: bool,
@@ -74,6 +78,8 @@ impl Args {
 impl From<&Args> for Config {
     fn from(value: &Args) -> Self {
         Config {
+            #[cfg(feature = "templating")]
+            tera: value.tera,
             parse: parse::ParseOptions {
                 prefix: value.prefix.unwrap_or('$'),
                 seperator: value.seperator.unwrap_or('|'),

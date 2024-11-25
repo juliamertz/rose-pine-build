@@ -139,7 +139,7 @@ mod tests {
 
     fn generate_variant(variant: Variant, content: &str) -> String {
         let config = &Config::default();
-        let captures = parse::parse_template(content, &config)
+        let captures = parse::parse_template(content, config)
             .into_iter()
             .flatten()
             .collect::<Vec<_>>();
