@@ -21,18 +21,16 @@ fn main() -> Result<()> {
 
     _ = fs::create_dir_all(&args.out);
     if args.template_source.is_dir() {
-        // TODO:
+        let out_dir = |v: Variant| args.out.join(v.key());
         for variant in Variant::iter() {
-            let out_dir = args.out.join(variant.key());
-            _ = fs::create_dir_all(&out_dir);
+            _ = fs::create_dir_all(out_dir(variant));
         }
 
         for file in fs::read_dir(&args.template_source)? {
             let file = file?;
             let variants = generate::generate_template(&file.path(), &config, args.tera)?;
             for (variant, content) in variants {
-                let out_dir = args.out.join(variant.key());
-                let path = out_dir.join(file.file_name());
+                let path = out_dir(variant).join(file.file_name());
                 fs::write(path, content)?;
             }
         }
@@ -43,7 +41,7 @@ fn main() -> Result<()> {
 
         let variants = generate::generate_template(&args.template_source, &config, args.tera)?;
         for (variant, content) in variants {
-            let filename = format!("{}{}", variant.id(), filetype);
+            let filename = format!("{}{}", variant.key(), filetype);
             let path = args.out.join(filename);
             fs::write(path, content)?;
         }
