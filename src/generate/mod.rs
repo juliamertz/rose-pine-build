@@ -32,10 +32,7 @@ pub fn generate_template(path: &Path, config: &Config) -> Result<Template> {
     Ok(replace::generate_variants(config, &template))
 }
 
-pub fn generate_templates(
-    paths: Vec<PathBuf>,
-    config: &Config,
-) -> Result<Templates> {
+pub fn generate_templates(paths: Vec<PathBuf>, config: &Config) -> Result<Templates> {
     let mut buf = vec![];
 
     for path in paths {

@@ -22,7 +22,6 @@ fn replace_captures(
     buffer.into_iter().collect()
 }
 
-
 pub fn generate_variants(config: &Config, content: &str) -> Vec<(Variant, String)> {
     let captures = parse::parse_template(content, config)
         .into_iter()

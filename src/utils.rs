@@ -18,7 +18,7 @@ impl Substitutable for Vec<char> {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, EnumIter, Display,Default)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumIter, Display, Default)]
 pub enum Case {
     #[default]
     Snake,
