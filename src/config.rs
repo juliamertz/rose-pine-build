@@ -49,10 +49,6 @@ pub struct Args {
     /// charachter to use as seperator in role groups
     pub seperator: Option<char>,
 
-    #[clap(long, short)]
-    /// only generate a specific variant
-    pub variant: Option<Variant>,
-
     #[clap(long)]
     /// always add alpha values
     pub force_alpha: bool,
@@ -62,7 +58,7 @@ pub struct Args {
     pub prefix: Option<char>,
 
     /// path to template file
-    pub template_file: PathBuf,
+    pub template_source: PathBuf,
 }
 
 impl Args {
@@ -70,7 +66,6 @@ impl Args {
         self.format.is_none()
             && self.delimiter.is_none()
             && self.seperator.is_none()
-            && self.variant.is_none()
             && self.prefix.is_none()
             && !self.force_alpha
     }

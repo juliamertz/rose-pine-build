@@ -1,40 +1,20 @@
+use super::Options;
 use crate::{
     config::Config,
-    format::Format,
     palette::Variant,
     parse::{self, Capture},
     utils::Substitutable,
 };
-use palette::Metadata;
-use serde::Serialize;
 use strum::IntoEnumIterator;
-use tera::{Context, Tera};
-
-#[derive(Clone, Debug, Serialize)]
-pub struct Options {
-    pub format: Format,
-    pub strip_spaces: bool,
-    pub force_alpha: bool,
-}
-
-impl Default for Options {
-    fn default() -> Self {
-        Self {
-            format: Format::Hex,
-            strip_spaces: false,
-            force_alpha: false,
-        }
-    }
-}
 
 fn replace_captures(
-    captures: Vec<Capture>,
+    captures: &[Capture],
     options: &Options,
     variant: &Variant,
     content: &str,
 ) -> String {
     let mut buffer: Vec<char> = content.to_owned().chars().collect();
-    for capture in captures.into_iter().rev() {
+    for capture in captures.iter().rev() {
         let role = &capture.format(variant, options);
         buffer.substitute(&role.chars().collect(), capture.start, capture.end);
     }
@@ -42,47 +22,29 @@ fn replace_captures(
     buffer.into_iter().collect()
 }
 
-pub fn generate_variant(variant: &Variant, config: &Config, content: &str) -> String {
-    let captures = parse::parse_template(content, config);
-    replace_captures(
-        captures.into_iter().flatten().collect(),
-        &config.generate,
-        variant,
-        content,
-    )
-}
+// TODO:
+fn generate_variant(variant: &Variant, config: &Config, content: &str) -> String {
+    let captures = parse::parse_template(content, config)
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
 
-fn create_context(variant: &Variant) -> Context {
-    let mut ctx = Context::new();
-    let meta: Metadata = variant.into();
-    ctx.insert("metadata", &meta);
-    for (role, color) in variant.colors() {
-        ctx.insert(role, &color);
-    }
-
-    ctx
-}
-
-pub fn render_template(variant: &Variant, template: &str) -> tera::Result<String> {
-    Tera::one_off(template, &create_context(variant), true)
-}
-
-pub fn render_templates(template: &str) -> tera::Result<Vec<(Variant, String)>> {
-    let mut result = vec![];
-
-    for variant in Variant::iter() {
-        result.push((
-            variant,
-            Tera::one_off(template, &create_context(&variant), true)?,
-        ))
-    }
-
-    Ok(result)
+    replace_captures(&captures, &config.generate, variant, content)
 }
 
 pub fn generate_variants(config: &Config, content: &str) -> Vec<(Variant, String)> {
+    let captures = parse::parse_template(content, config)
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+
     Variant::iter()
-        .map(|v| (v, generate_variant(&v, config, content)))
+        .map(|v| {
+            (
+                v,
+                replace_captures(&captures, &config.generate, &v, content),
+            )
+        })
         .collect()
 }
 
@@ -167,11 +129,20 @@ mod tests {
     fn metadata() {
         assert_eq!(generate_variant(Variant::Main, "$id"), "rose-pine");
         assert_eq!(generate_variant(Variant::Moon, "$id"), "rose-pine-moon");
-        assert_eq!(generate_variant(Variant::Moon, "$id:snake"), "rose_pine_moon");
+        assert_eq!(
+            generate_variant(Variant::Moon, "$id:snake"),
+            "rose_pine_moon"
+        );
         assert_eq!(generate_variant(Variant::Moon, "$id:camel"), "rosePineMoon");
         assert_eq!(generate_variant(Variant::Moon, "$name"), "Rosé Pine Moon");
-        assert_eq!(generate_variant(Variant::Moon, "$name:lower"), "rosé pine moon");
-        assert_eq!(generate_variant(Variant::Main, "$description"), "All natural pine, faux fur and a bit of soho vibes for the classy minimalist");
+        assert_eq!(
+            generate_variant(Variant::Moon, "$name:lower"),
+            "rosé pine moon"
+        );
+        assert_eq!(
+            generate_variant(Variant::Main, "$description"),
+            "All natural pine, faux fur and a bit of soho vibes for the classy minimalist"
+        );
     }
 
     fn generate_variant(variant: Variant, content: &str) -> String {
