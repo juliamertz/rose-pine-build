@@ -56,6 +56,7 @@ pub enum MetadataKey {
     Name,
     Description,
     Key,
+    Kind,
 }
 
 #[derive(Debug)]
@@ -106,6 +107,7 @@ impl Capture {
                     MetadataKey::Id => meta.id,
                     MetadataKey::Name => meta.name,
                     MetadataKey::Key => meta.key,
+                    MetadataKey::Kind => meta.kind,
                     MetadataKey::Description => env!("CARGO_PKG_DESCRIPTION").to_string(),
                 };
 

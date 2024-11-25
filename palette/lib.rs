@@ -65,6 +65,7 @@ pub struct Metadata {
     pub id: String,
     pub key: String,
     pub name: String,
+    pub kind: String, // TODO: enum type
 }
 
 impl From<&Variant> for Metadata {
@@ -73,6 +74,7 @@ impl From<&Variant> for Metadata {
             id: value.id(),
             key: value.key(),
             name: value.name(),
+            kind: if value.is_dark() { "dark" } else { "light" }.to_lowercase(),
         }
     }
 }

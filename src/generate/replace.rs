@@ -143,6 +143,7 @@ mod tests {
             generate_variant(Variant::Main, "$description"),
             "All natural pine, faux fur and a bit of soho vibes for the classy minimalist"
         );
+        assert_eq!(generate_variant(Variant::Main, "$kind"), "dark");
     }
 
     fn generate_variant(variant: Variant, content: &str) -> String {
