@@ -22,15 +22,6 @@ fn replace_captures(
     buffer.into_iter().collect()
 }
 
-// TODO:
-fn generate_variant(variant: &Variant, config: &Config, content: &str) -> String {
-    let captures = parse::parse_template(content, config)
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
-
-    replace_captures(&captures, &config.generate, variant, content)
-}
 
 pub fn generate_variants(config: &Config, content: &str) -> Vec<(Variant, String)> {
     let captures = parse::parse_template(content, config)
@@ -147,6 +138,12 @@ mod tests {
     }
 
     fn generate_variant(variant: Variant, content: &str) -> String {
-        super::generate_variant(&variant, &Config::default(), content)
+        let config = &Config::default();
+        let captures = parse::parse_template(content, &config)
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        replace_captures(&captures, &config.generate, &variant, content)
     }
 }

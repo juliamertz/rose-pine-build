@@ -47,11 +47,5 @@ fn main() -> Result<()> {
         }
     }
 
-    // let variants = generate::generate_templates(vec![args.template_source], &config, args.tera)?;
-
-    // for (file_path, variants) in variants {
-    //     // fs::write(filename(variant), content).expect("to write");
-    // }
-
     Ok(())
 }
