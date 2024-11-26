@@ -60,24 +60,45 @@ impl ColorValues for Hsl {
     }
 }
 
-#[derive(Debug, Serialize)]
-pub struct Metadata {
-    pub id: String,
-    pub key: String,
-    pub name: String,
-    pub kind: String, // TODO: enum type
+#[derive(Debug, Copy, Clone, PartialEq, Display, EnumIter)]
+pub enum Metadata {
+    Id,
+    Name,
+    Description,
+    Key,
+    Kind,
 }
 
-impl From<&Variant> for Metadata {
-    fn from(value: &Variant) -> Self {
-        Metadata {
-            id: value.id(),
-            key: value.key(),
-            name: value.name(),
-            kind: if value.is_dark() { "dark" } else { "light" }.to_lowercase(),
+impl Metadata {
+    pub fn format(&self, variant: &Variant) -> String {
+        match self {
+            Self::Id => variant.id(),
+            Self::Name => variant.name(),
+            Self::Description => env!("CARGO_PKG_DESCRIPTION").to_string(),
+            Self::Key => variant.key(),
+            Self::Kind => variant.kind().to_string(),
         }
     }
 }
+
+// #[derive(Debug, Serialize)]
+// pub struct Metadata {
+//     pub id: String,
+//     pub key: String,
+//     pub name: String,
+//     pub kind: String, // TODO: enum type
+// }
+//
+// impl From<&Variant> for Metadata {
+//     fn from(value: &Variant) -> Self {
+//         Metadata {
+//             id: value.id(),
+//             key: value.key(),
+//             name: value.name(),
+//             kind: if value.is_dark() { "dark" } else { "light" }.to_lowercase(),
+//         }
+//     }
+// }
 
 #[derive(
     Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString, Hash, Serialize,

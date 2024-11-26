@@ -15,6 +15,13 @@ pub enum Variant {
     Dawn,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Display)]
+#[strum(serialize_all = "lowercase")]
+pub enum VariantKind {
+    Light,
+    Dark,
+}
+
 impl Variant {
     pub fn id(&self) -> String {
         match self {
@@ -38,22 +45,23 @@ impl Variant {
         .into()
     }
 
-    pub fn is_light(&self) -> bool {
-        self.eq(&Variant::Dawn)
+    pub fn kind(&self) -> VariantKind {
+        match self {
+            Self::Dawn => VariantKind::Light,
+            _ => VariantKind::Dark,
+        }
     }
 
-    pub fn is_dark(&self) -> bool {
-        !self.is_light()
+    pub fn metadata(&self) -> HashMap<String, String> {
+        Metadata::iter()
+            .map(|r| (r.to_string().to_snek_case(), r.format(self)))
+            .collect()
     }
 
     pub fn colors(&self) -> HashMap<String, Color> {
         Role::iter()
             .map(|r| (r.to_string().to_snek_case(), r.get_color(self)))
             .collect()
-    }
-
-    pub fn metadata(&self) -> Metadata {
-        self.into()
     }
 
     pub fn get_rgb(&self, role: Role) -> Rgb {

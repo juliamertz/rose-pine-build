@@ -101,15 +101,15 @@ fn opacity() {
 
 #[test]
 fn metadata() {
-    assert_metadata("$name", MetadataKey::Name, None);
-    assert_metadata("$name:title", MetadataKey::Name, Some(Case::Title));
+    assert_metadata("$name", Metadata::Name, None);
+    assert_metadata("$name:title", Metadata::Name, Some(Case::Title));
 }
 
 fn assert_role(content: &str, roles: Vec<Role>, format: Option<Format>, alpha: Option<u16>) {
     assert_capture(content, Template::Role(RoleCaptures(roles), format, alpha));
 }
 
-fn assert_metadata(content: &str, key: MetadataKey, case: Option<Case>) {
+fn assert_metadata(content: &str, key: Metadata, case: Option<Case>) {
     assert_capture(content, Template::Metadata(key, case));
 }
 

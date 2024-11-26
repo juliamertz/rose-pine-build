@@ -6,7 +6,7 @@ use crate::{
     utils::{Case, Casing},
 };
 use clap::ValueEnum;
-use palette::Color;
+use palette::{Color, Metadata, VariantKind};
 use serde::Serialize;
 use std::{
     fmt::{Debug, Display},
@@ -14,7 +14,6 @@ use std::{
     vec,
 };
 use strum::IntoEnumIterator;
-use strum_macros::{Display, EnumIter};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct ParseOptions {
@@ -39,7 +38,7 @@ enum Side<T> {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Template {
-    Metadata(MetadataKey, Option<Case>),
+    Metadata(Metadata, Option<Case>),
     Role(RoleCaptures, Option<Format>, Option<u16>),
 }
 
@@ -48,15 +47,6 @@ pub struct Capture {
     pub template: Template,
     pub start: usize,
     pub end: usize,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Display, EnumIter)]
-pub enum MetadataKey {
-    Id,
-    Name,
-    Description,
-    Key,
-    Kind,
 }
 
 #[derive(Debug)]
@@ -102,15 +92,7 @@ impl Capture {
                 format.format_color(role.get_color(variant), alpha)
             }
             Template::Metadata(key, case) => {
-                let meta = variant.metadata();
-                let value = match key {
-                    MetadataKey::Id => meta.id,
-                    MetadataKey::Name => meta.name,
-                    MetadataKey::Key => meta.key,
-                    MetadataKey::Kind => meta.kind,
-                    MetadataKey::Description => env!("CARGO_PKG_DESCRIPTION").to_string(),
-                };
-
+                let value = key.format(variant);
                 match case {
                     Some(case) => value.to_case(case),
                     None => value,
@@ -264,7 +246,7 @@ fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
     }
     lexer.advance();
 
-    if let Ok(key) = parse_enum_variant::<MetadataKey>(lexer, Case::Snake) {
+    if let Ok(key) = parse_enum_variant::<Metadata>(lexer, Case::Snake) {
         let format = if lexer.current() == Some(&':') {
             lexer.advance();
             Some(parse_enum_variant::<Case>(lexer, Case::Snake)?)
@@ -367,13 +349,10 @@ impl RoleCaptures {
     fn get_color(&self, variant: &Variant) -> Color {
         match self.0.as_slice() {
             [role] => role,
-            [dark, light] => {
-                if variant.is_dark() {
-                    dark
-                } else {
-                    light
-                }
-            }
+            [dark, light] => match variant.kind() {
+                VariantKind::Light => light,
+                VariantKind::Dark => dark,
+            },
             [main, moon, dawn] => match variant {
                 Variant::Main => main,
                 Variant::Moon => moon,

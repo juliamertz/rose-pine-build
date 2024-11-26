@@ -1,5 +1,5 @@
 use anyhow::Result;
-use palette::{Metadata, Variant};
+use palette::Variant;
 use strum::IntoEnumIterator;
 use tera::{Context, Tera};
 
@@ -22,8 +22,9 @@ mod filters {
 
 fn create_context(variant: &Variant) -> Context {
     let mut ctx = Context::new();
-    let meta: Metadata = variant.into();
-    ctx.insert("metadata", &meta);
+    for (key, value) in variant.metadata() {
+        ctx.insert(key, &value);
+    }
     for (role, color) in variant.colors() {
         ctx.insert(role, &color);
     }
