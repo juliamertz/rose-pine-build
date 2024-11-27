@@ -71,25 +71,14 @@ impl Format {
         let chunks = self.format_chunks(&chunks);
         match self {
             Self::Hex | Self::Ahex => format!("#{chunks}"),
-            Self::Rgb
-            | Self::Hsl
-            | Self::RgbNs
-            | Self::HslNs
-            | Self::HexNs
-            | Self::AhexNs
-            | Self::RgbAnsi => chunks,
             Self::RgbArray | Self::HslArray => format!("[{chunks}]"),
-            Self::RgbFunction | Self::HslFunction => format!(
-                "{}({chunks})",
-                match self {
-                    Self::RgbFunction => "rgb",
-                    Self::HslFunction => "hsl",
-                    _ => unreachable!(),
-                }
-            ),
+            Self::RgbFunction => format!("rgb({chunks})",),
+            Self::HslFunction => format!("hsl({chunks})"),
+            _ => chunks,
         }
     }
 
+    /// Formats and joins all color components
     fn format_chunks(&self, chunks: &[f32]) -> String {
         let chunks = chunks
             .iter()
@@ -109,6 +98,7 @@ impl Format {
         }
     }
 
+    /// Formats a single color component
     fn format_chunk(&self, chunk: f32, i: usize) -> String {
         if self.is_hsl() && (i > 0 && i < 3) {
             format!("{chunk}%")
