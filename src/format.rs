@@ -9,11 +9,11 @@ pub enum Format {
     #[default]
     /// #ebbcba | #ebbcbaff
     Hex,
-    /// ebbcbaff
+    /// ebbcba | ebbcbaff
     HexNs,
     /// #ebbcba | #ffebbcba
     Ahex,
-    /// ffebbcba
+    /// ebbcba | ffebbcba 
     AhexNs,
     /// 235, 188, 186
     Rgb,
