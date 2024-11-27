@@ -1,7 +1,6 @@
 pub mod variant;
 pub use variant::*;
 
-// use colors_transform::{Color, Rgb};
 use serde::Serialize;
 use strum_macros::{Display, EnumIter, EnumString, VariantNames};
 
@@ -48,12 +47,12 @@ pub trait ColorValues {
     fn color_values(&self) -> Vec<f32>;
 }
 
+// colors_transform library uses f32 idk why
 impl ColorValues for Rgb {
     fn color_values(&self) -> Vec<f32> {
         vec![self.r as f32, self.g as f32, self.b as f32]
     }
 }
-
 impl ColorValues for Hsl {
     fn color_values(&self) -> Vec<f32> {
         vec![self.h as f32, self.s as f32, self.l as f32]
@@ -81,29 +80,10 @@ impl Metadata {
     }
 }
 
-// #[derive(Debug, Serialize)]
-// pub struct Metadata {
-//     pub id: String,
-//     pub key: String,
-//     pub name: String,
-//     pub kind: String, // TODO: enum type
-// }
-//
-// impl From<&Variant> for Metadata {
-//     fn from(value: &Variant) -> Self {
-//         Metadata {
-//             id: value.id(),
-//             key: value.key(),
-//             name: value.name(),
-//             kind: if value.is_dark() { "dark" } else { "light" }.to_lowercase(),
-//         }
-//     }
-// }
-
 #[derive(
     Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString, Hash, Serialize,
 )]
-#[strum(serialize_all = "camelCase")]
+#[strum(serialize_all = "snake_case")]
 pub enum Role {
     Base,
     Surface,

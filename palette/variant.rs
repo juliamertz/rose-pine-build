@@ -1,21 +1,18 @@
 use crate::{Color, Hsl, Metadata, Rgb, Role};
-use heck::ToSnekCase;
-use serde::Serialize;
+use heck::ToSnakeCase;
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
-use strum_macros::{Display, EnumIter, EnumString, VariantNames};
+use strum_macros::{Display, EnumIter};
 
-#[derive(
-    Debug, Clone, Copy, Display, PartialEq, Eq, EnumIter, VariantNames, EnumString, Hash, Serialize,
-)]
-#[strum(serialize_all = "camelCase")]
+#[derive(Debug, Clone, Copy, Display, EnumIter)]
+#[strum(serialize_all = "lowercase")]
 pub enum Variant {
     Main,
     Moon,
     Dawn,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Display)]
+#[derive(Debug, Copy, Clone, Display)]
 #[strum(serialize_all = "lowercase")]
 pub enum VariantKind {
     Light,
@@ -54,13 +51,13 @@ impl Variant {
 
     pub fn metadata(&self) -> HashMap<String, String> {
         Metadata::iter()
-            .map(|r| (r.to_string().to_snek_case(), r.format(self)))
+            .map(|r| (r.to_string().to_snake_case(), r.format(self)))
             .collect()
     }
 
     pub fn colors(&self) -> HashMap<String, Color> {
         Role::iter()
-            .map(|r| (r.to_string().to_snek_case(), r.get_color(self)))
+            .map(|r| (r.to_string().to_snake_case(), r.get_color(self)))
             .collect()
     }
 
