@@ -11,7 +11,7 @@ use clap::{
 use serde::Serialize;
 use std::path::PathBuf;
 
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Serialize)]
 pub struct Config {
     /// use tera templating engine
     #[cfg(feature = "templating")]

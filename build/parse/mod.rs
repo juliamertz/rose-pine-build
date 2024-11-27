@@ -15,7 +15,7 @@ use std::{
 };
 use strum::IntoEnumIterator;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct ParseOptions {
     pub prefix: char,
     pub seperator: char,
@@ -59,9 +59,9 @@ pub enum ParseError {
 }
 
 struct Lexer {
-    pub index: usize,
-    pub content: Vec<char>,
-    pub config: ParseOptions,
+    index: usize,
+    content: Vec<char>,
+    config: ParseOptions,
 }
 
 impl Default for ParseOptions {
@@ -143,7 +143,7 @@ impl Lexer {
         Self {
             index: 0,
             content: content.chars().collect(),
-            config: config.parse.clone(),
+            config: config.parse,
         }
     }
 
@@ -304,20 +304,21 @@ fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
         let mut buf: Vec<char> = vec![];
 
         while let Some(c) = lexer.current() {
-            if c.is_ascii_digit() && buf.len() < 3 {
-                buf.push(*c);
-                if lexer.advance().is_none() {
-                    break;
-                };
-            } else {
-                break;
-            }
+            match c.is_ascii_digit() && buf.len() < 3 {
+                true => {
+                    buf.push(*c);
+                    if lexer.advance().is_none() {
+                        break;
+                    };
+                }
+                false => break,
+            };
         }
 
         let parsed: u16 = buf
             .into_iter()
             .collect::<String>()
-            .parse::<u16>()
+            .parse()
             .map_err(ParseError::InvalidOpacity)?;
 
         Some(parsed)

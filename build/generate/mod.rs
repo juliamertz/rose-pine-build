@@ -11,7 +11,7 @@ pub mod replace;
 #[cfg(feature = "templating")]
 pub mod templating;
 
-#[derive(Clone, Debug, Serialize, Default)]
+#[derive(Clone, Copy, Debug, Serialize, Default)]
 pub struct Options {
     pub format: Format,
     pub strip_spaces: bool,
