@@ -1,9 +1,9 @@
 use anyhow::{Context, Result};
-use clap::Parser;
-use rosepine::{
+use build::{
     config::{Args, Config},
     generate,
 };
+use clap::Parser;
 use std::{fs, path::Path};
 
 fn main() -> Result<()> {

@@ -18,7 +18,7 @@
 Start by creating a template file. This will look similar to your desired theme file, replacing colour values with Rosé Pine variables. For example, `#ebbcba` would now be `$rose`.
 
 ```
-``Usage: rosepine [OPTIONS] <TEMPLATE_SOURCE>
+``Usage: rose-pine-build [OPTIONS] <TEMPLATE_SOURCE>
 
 Arguments:
   <TEMPLATE_SOURCE>

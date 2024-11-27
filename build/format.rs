@@ -13,7 +13,7 @@ pub enum Format {
     HexNs,
     /// #ebbcba | #ffebbcba
     Ahex,
-    /// ebbcba | ffebbcba
+    /// ebbcba | ffebbcba 
     AhexNs,
     /// 235, 188, 186
     Rgb,

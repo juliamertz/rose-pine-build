@@ -1,0 +1,27 @@
+[package]
+name = "build"
+version = "0.1.0"
+edition = "2021"
+authors = ["Julia Mertz <info@juliamertz.dev>"]
+license = "GPL-2.0-or-later"
+
+[[bin]]
+name = "rose-pine-build"
+path = "./main.rs"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+palette = { path = "../palette" }
+clap = { version = "4.5.21", features = ["derive"] }
+serde = { version = "1.0.215", features = ["derive"] }
+strum = "0.26.3"
+tera = { version = "1", default-features = true, optional = true }
+strum_macros = "0.26.4"
+heck = "0.5.0"
+anyhow = "1.0.93"
+
+[features]
+templating = ["tera"]
+default = ["templating"]
