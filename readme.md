@@ -18,29 +18,73 @@
 Start by creating a template file. This will look similar to your desired theme file, replacing colour values with Rosé Pine variables. For example, `#ebbcba` would now be `$rose`.
 
 ```
+``Usage: rosepine [OPTIONS] <TEMPLATE_SOURCE>
+
+Arguments:
+  <TEMPLATE_SOURCE>
+          path to template file
+
+Options:
+  -o, --out <OUT>
+          path to directory where generated files will be output
+
+          [default: dist]
+
+  -t, --tera
+          render with tera templating engine
+
+  -r, --recurse
+          recursively generate templates in source directory
+
+  -f, --format <FORMAT>
+          see below for examples 
+            
+  -d, --delimiter <DELIMITER>
+          bracket type for role groups
+
+          [default: parenthesis]
+          [possible values: parenthesis, curly-bracket, angle-bracket, sqaure-bracket]
+
+  -s, --seperator <SEPERATOR>
+          charachter to use as seperator in role groups
+
+          [default: |]
+
+      --force-alpha
+          always add alpha values
+
+  -p, --prefix <PREFIX>
+          variable prefix
+
+          [default: $]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
 ```
 
 ## Color formats
 
 | Name         | Example              |
 | ------------ | -------------------- |
-| hex |          #ebbcba / #ebbcbaff |
-| hex-ns |       ebbcbaff |
-| ahex |         #ebbcba / #ffebbcba |
-| ahex_ns |      ffebbcba |
-| rgb |          235, 188, 186 |
-| rgb_ns |       235 188 186 |
+| hex          |          #ebbcba / #ebbcbaff |
+| hex-ns       |       ebbcbaff |
+| ahex         |         #ebbcba / #ffebbcba |
+| ahex_ns      |      ffebbcba |
+| rgb          |          235, 188, 186 |
+| rgb_ns       |       235 188 186 |
 | rgb_function | rgb(235, 188, 186) |
-| rgb_array |    235;188;186 |
-| rgb_ansi |     2, 55%, 83% |
-| hsl |          [235, 188, 186] |
-| hsl_ns |       2 55% 83% |
+| rgb_array    |    235;188;186 |
+| rgb_ansi     |     2, 55%, 83% |
+| hsl          |          [235, 188, 186] |
+| hsl_ns       |       2 55% 83% |
 | hsl_function | hsl(2, 55%, 83%) |
-| hsl_array |    [2, 55%, 83%] |
+| hsl_array    |    [2, 55%, 83%] |
 ## Variables
 
 > By default, variables are prefixed with `$`
-
 
 ### Metadata
 
