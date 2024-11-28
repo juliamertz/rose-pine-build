@@ -1,10 +1,10 @@
 use super::Options;
 use crate::{
     config::Config,
-    palette::Variant,
     parse::{self, Capture},
     utils::Substitutable,
 };
+use palette::Variant;
 use strum::IntoEnumIterator;
 
 fn replace_captures(

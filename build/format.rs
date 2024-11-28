@@ -113,7 +113,7 @@ impl Format {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::palette::{Role, Variant};
+    use palette::{Role, Variant};
 
     fn assert_format(format: Format, alpha: Option<f32>, val: &str) {
         let color = Role::Love.get_color(&Variant::Moon);

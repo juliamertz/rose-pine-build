@@ -1,8 +1,11 @@
+mod config;
+mod format;
+mod generate;
+mod parse;
+mod utils;
+
+use crate::config::{Args, Config};
 use anyhow::{Context, Result};
-use build::{
-    config::{Args, Config},
-    generate,
-};
 use clap::Parser;
 use std::{fs, path::Path};
 

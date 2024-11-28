@@ -9,9 +9,6 @@ license = "GPL-2.0-or-later"
 name = "rose-pine-build"
 path = "./main.rs"
 
-[lib]
-path = "lib.rs"
-
 [dependencies]
 palette = { path = "../palette" }
 clap = { version = "4.5.21", features = ["derive"] }

@@ -2,11 +2,11 @@ use crate::{
     config::Config,
     format::Format,
     generate::Options,
-    palette::{Role, Variant},
     utils::{Case, Casing},
 };
 use clap::ValueEnum;
 use palette::{Color, Metadata, VariantKind};
+use palette::{Role, Variant};
 use serde::Serialize;
 use std::{
     fmt::{Debug, Display},

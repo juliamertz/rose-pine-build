@@ -20,7 +20,6 @@ pub enum VariantKind {
 }
 
 type Colors = (Rgb, Hsl);
-
 pub struct Palette {
     base: Colors,
     surface: Colors,
