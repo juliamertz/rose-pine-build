@@ -2,10 +2,7 @@ use crate::{config::Config, format::Format};
 use anyhow::Result;
 use palette::Variant;
 use serde::Serialize;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 
 pub mod replace;
 #[cfg(feature = "templating")]
@@ -19,7 +16,6 @@ pub struct Options {
 }
 
 type Template = Vec<(Variant, String)>;
-type Templates = Vec<(PathBuf, Template)>;
 
 pub fn generate_template(path: &Path, config: &Config) -> Result<Template> {
     let template = fs::read_to_string(path)?;
@@ -30,15 +26,4 @@ pub fn generate_template(path: &Path, config: &Config) -> Result<Template> {
     }
 
     Ok(replace::generate_variants(config, &template))
-}
-
-pub fn generate_templates(paths: Vec<PathBuf>, config: &Config) -> Result<Templates> {
-    let mut buf = vec![];
-
-    for path in paths {
-        let variants = generate_template(&path, config)?;
-        buf.push((path, variants));
-    }
-
-    Ok(buf)
 }

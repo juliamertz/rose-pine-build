@@ -53,8 +53,8 @@ pub struct Capture {
 pub enum ParseError {
     VariantNotFound,
     PrefixExpected,
-    OpenDelimExpected,
     CloseDelimExpected,
+    #[allow(dead_code)]
     InvalidOpacity(ParseIntError),
 }
 

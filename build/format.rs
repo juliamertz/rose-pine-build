@@ -43,13 +43,6 @@ impl Format {
         )
     }
 
-    pub fn is_rgb(&self) -> bool {
-        matches!(
-            self,
-            Self::Rgb | Self::RgbNs | Self::RgbArray | Self::RgbFunction | Self::RgbAnsi
-        )
-    }
-
     pub fn is_hex(&self) -> bool {
         matches!(self, Self::Hex | Self::HexNs | Self::Ahex | Self::AhexNs)
     }
