@@ -38,7 +38,7 @@
         {
           packages.default =
             let
-              manifest = (lib.importTOML ./Cargo.toml).package;
+              manifest = (lib.importTOML ./build/Cargo.toml).package;
             in
             pkgs.rustPlatform.buildRustPackage {
               inherit buildInputs nativeBuildInputs;
@@ -52,7 +52,7 @@
                 lockFile = ./Cargo.lock;
                 allowBuiltinFetchGit = true;
               };
-              meta.mainProgram = manifest.name;
+              meta.mainProgram = "rose-pine-build";
             };
           devShells.default = pkgs.mkShell {
             name = "dev-shell";
