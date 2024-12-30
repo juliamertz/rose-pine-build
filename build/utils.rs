@@ -10,9 +10,11 @@ impl Substitutable for Vec<char> {
     fn substitute(&mut self, new: &Self, start: usize, end: usize) {
         let mut out = Vec::from(&self[0..start]);
         out.extend(new);
-        if end != self.len() - 1 {
-            out.extend(&self[end..self.len()]);
+
+        if end != self.len() {
+            out.extend(&self[end + 1..self.len()]);
         }
+
         *self = out;
     }
 }

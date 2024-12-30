@@ -155,13 +155,9 @@ impl Lexer {
         self.index += n
     }
 
-    fn advance(&mut self) -> Option<usize> {
-        if self.index >= self.content.len() - 1 {
-            return None;
-        }
-
+    fn advance(&mut self) -> usize {
         self.index += 1;
-        Some(self.index)
+        self.index
     }
 
     /// Advances while the current char is whitespace
@@ -247,9 +243,16 @@ fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
     lexer.advance();
 
     if let Ok(key) = parse_enum_variant::<Metadata>(lexer, Case::Snake) {
+        let idx = lexer.index;
         let format = if lexer.current() == Some(&':') {
             lexer.advance();
-            Some(parse_enum_variant::<Case>(lexer, Case::Snake)?)
+            match parse_enum_variant::<Case>(lexer, Case::Snake) {
+                Ok(case) => Some(case),
+                Err(_) => {
+                    lexer.index = idx;
+                    None
+                }
+            }
         } else {
             None
         };
@@ -257,7 +260,7 @@ fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
         return Ok(Capture {
             template: Template::Metadata(key, format),
             start,
-            end: lexer.index,
+            end: lexer.index - 1,
         });
     }
 
@@ -307,7 +310,7 @@ fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
             match c.is_ascii_digit() && buf.len() < 3 {
                 true => {
                     buf.push(*c);
-                    if lexer.advance().is_none() {
+                    if lexer.advance() > lexer.content.len() - 1 {
                         break;
                     };
                 }
@@ -329,7 +332,7 @@ fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
     Ok(Capture {
         template: Template::Role(roles, format, opacity),
         start,
-        end: lexer.index,
+        end: lexer.index - 1,
     })
 }
 

@@ -125,6 +125,7 @@ mod tests {
         );
         assert_eq!(generate_variant(Variant::Moon, "$id:camel"), "rosePineMoon");
         assert_eq!(generate_variant(Variant::Moon, "$name"), "Rosé Pine Moon");
+        assert_eq!(generate_variant(Variant::Moon, "$name:"), "Rosé Pine Moon:");
         assert_eq!(
             generate_variant(Variant::Moon, "$name:lower"),
             "rosé pine moon"

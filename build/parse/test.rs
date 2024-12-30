@@ -3,7 +3,24 @@ use crate::parse;
 
 #[test]
 fn role_variants() {
+    assert_role_with_pos(
+        "$love:hex_ns",
+        vec![Role::Love],
+        Some(Format::HexNs),
+        None,
+        0,
+        11,
+    );
+    assert_role_with_pos("$pine", vec![Role::Pine], None, None, 0, 4);
     assert_role("$(pine)", vec![Role::Pine], None, None);
+    assert_role_with_pos(
+        "$love:rgb_function",
+        vec![Role::Love],
+        Some(Format::RgbFunction),
+        None,
+        0,
+        17,
+    );
     assert_role("$(rose|love)", vec![Role::Rose, Role::Love], None, None);
     assert_role(
         "$(foam|pine|iris)",
@@ -97,32 +114,78 @@ fn opacity() {
         Some(Format::RgbFunction),
         Some(75),
     );
+
+    assert_role_with_pos(
+        "$pine:rgb_function/80",
+        vec![Role::Pine],
+        Some(Format::RgbFunction),
+        Some(80),
+        0,
+        20,
+    );
 }
 
 #[test]
 fn metadata() {
-    assert_metadata("$name", Metadata::Name, None);
-    assert_metadata("$name:title", Metadata::Name, Some(Case::Title));
+    assert_metadata("$name", Metadata::Name, None, 0, 4);
+    assert_metadata("$name:title", Metadata::Name, Some(Case::Title), 0, 10);
+    // undetected types should be ignored
+    assert_metadata("$name:hello_world", Metadata::Name, None, 0, 4);
+    assert_metadata("$name:", Metadata::Name, None, 0, 4);
+    assert_metadata("$name:", Metadata::Name, None, 0, 4);
 }
 
 fn assert_role(content: &str, roles: Vec<Role>, format: Option<Format>, alpha: Option<u16>) {
     assert_capture(content, Template::Role(RoleCaptures(roles), format, alpha));
 }
 
-fn assert_metadata(content: &str, key: Metadata, case: Option<Case>) {
-    assert_capture(content, Template::Metadata(key, case));
+fn assert_role_with_pos(
+    content: &str,
+    roles: Vec<Role>,
+    format: Option<Format>,
+    alpha: Option<u16>,
+    start: usize,
+    end: usize,
+) {
+    let config = Config::default();
+    let mut lexer = Lexer::new(content, &config);
+    let correct = Capture {
+        start,
+        end,
+        template: Template::Role(RoleCaptures(roles), format, alpha),
+    };
+
+    match parse::parse_capture(&mut lexer) {
+        Ok(capture) => assert_eq!(correct, capture),
+        Err(e) => {
+            panic!("Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}")
+        }
+    }
+}
+
+fn assert_metadata(content: &str, key: Metadata, case: Option<Case>, start: usize, end: usize) {
+    let config = Config::default();
+    let mut lexer = Lexer::new(content, &config);
+    let correct = Capture {
+        start,
+        end,
+        template: Template::Metadata(key, case),
+    };
+
+    match parse::parse_capture(&mut lexer) {
+        Ok(capture) => assert_eq!(correct, capture),
+        Err(e) => {
+            panic!("Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}")
+        }
+    }
 }
 
 fn assert_capture(content: &str, correct: Template) {
     let config = Config::default();
     let mut lexer = Lexer::new(content, &config);
     match parse::parse_capture(&mut lexer) {
-        Ok(mut capture) => {
-            // reset positions for testing purposes
-            capture.start = 0;
-            capture.end = 0;
-            assert_eq!(correct, capture.template)
-        }
+        Ok(capture) => assert_eq!(correct, capture.template),
+
         Err(e) => {
             panic!("Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}")
         }
