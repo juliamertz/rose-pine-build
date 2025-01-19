@@ -6,6 +6,7 @@ use tera::{Context, Tera};
 mod filters {
     use std::collections::HashMap;
 
+    // credit: https://github.com/catppuccin/whiskers/blob/c36c9fe101448cd6755d91c83321ceb4346b9ae6/src/filters.rs#L123C1-L134C2
     pub fn trunc(
         value: &tera::Value,
         args: &HashMap<String, tera::Value>,

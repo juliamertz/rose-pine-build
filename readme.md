@@ -177,3 +177,10 @@ When a color is formatted the alpha value will be included if:
 - the `--force-alpha` option is passed to the cli
 
 For example `$love/80` formatted as `rgb_function` would evaluate to `rgb(235, 111, 146, 0.8)`, similarly formatting as hex yields `#eb6f92cc`
+
+The alpha value should always come last, so a full example including format would look like `$pine:hex_ns/40`
+
+### Using Tera
+
+Sometimes a theme requires more complex formatting which is where the [tera templating engine](https://keats.github.io/tera/docs/#introduction) comes in. 
+All color and metadata keys are available in the global namespace. refer to tera's own documentation for further usage instructions.
