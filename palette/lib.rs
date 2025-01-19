@@ -43,22 +43,6 @@ impl Hsl {
     }
 }
 
-pub trait ColorValues {
-    fn color_values(&self) -> Vec<f32>;
-}
-
-// colors_transform library uses f32 idk why
-impl ColorValues for Rgb {
-    fn color_values(&self) -> Vec<f32> {
-        vec![self.r as f32, self.g as f32, self.b as f32]
-    }
-}
-impl ColorValues for Hsl {
-    fn color_values(&self) -> Vec<f32> {
-        vec![self.h as f32, self.s as f32, self.l as f32]
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Display, EnumIter)]
 pub enum Metadata {
     Id,

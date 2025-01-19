@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use palette::{Color, ColorValues};
+use palette::Color;
 use serde::Serialize;
 use strum_macros::{Display, EnumIter};
 
@@ -49,8 +49,8 @@ impl Format {
 
     pub fn format_color(&self, color: Color, alpha: Option<impl Into<f32> + Copy>) -> String {
         let mut chunks = match self.is_hsl() {
-            true => color.hsl.color_values(),
-            false => color.rgb.color_values(),
+            true => vec![color.hsl.h as f32, color.hsl.s as f32, color.hsl.l as f32],
+            false => vec![color.rgb.r as f32, color.rgb.g as f32, color.rgb.b as f32],
         };
 
         if let Some(alpha) = alpha.map(|a| a.into() / 100.0) {
