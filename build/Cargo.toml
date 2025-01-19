@@ -3,7 +3,7 @@ name = "build"
 version = "0.1.0"
 edition = "2021"
 authors = ["Julia Mertz <info@juliamertz.dev>"]
-license = "GPL-2.0-or-later"
+license = "MIT"
 
 [[bin]]
 name = "rose-pine-build"
