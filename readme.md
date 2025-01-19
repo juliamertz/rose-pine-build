@@ -167,3 +167,13 @@ These are the available casings that can be used to format metadata keys:
 - train
 - lower
 - upper
+
+### Alpa values
+
+Each color key can have it's own alpha value, by default each color is treated as 100% opaque.
+When a color is formatted the alpha value will be included if:
+
+- it's value is less than 100 
+- the `--force-alpha` option is passed to the cli
+
+For example `$love/80` formatted as `rgb_function` would evaluate to `rgb(235, 111, 146, 0.8)`, similarly formatting as hex yields `#eb6f92cc`
