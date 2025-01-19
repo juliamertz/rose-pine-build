@@ -95,7 +95,6 @@ Options:
 	"name": "$name",
 	"key": "$key",
 	"description": "$description",
-	"type": "$type",
 }
 
 // rose-pine.json
@@ -104,7 +103,6 @@ Options:
 	"name": "Rosé Pine",
 	"key": "main",
 	"description": "All natural pine, faux fur and a bit of soho vibes for the classy minimalist",
-	"type": "dark",
 }
 
 // rose-pine-moon.json
@@ -113,7 +111,6 @@ Options:
 	"name": "Rosé Pine Moon",
 	"key": "moon",
 	"description": "All natural pine, faux fur and a bit of soho vibes for the classy minimalist",
-	"type": "dark",
 }
 
 // rose-pine-dawn.json
@@ -122,7 +119,6 @@ Options:
 	"name": "Rosé Pine Dawn",
 	"key": "dawn",
 	"description": "All natural pine, faux fur and a bit of soho vibes for the classy minimalist",
-	"type": "light",
 }
 ```
 
@@ -145,3 +141,29 @@ Options:
 // rose-pine-dawn.json
 { "accent": "#286983" }
 ```
+
+### Specifying formats per key/color
+
+To differentiate from the default format you can specify this per color/metadata key
+
+```jsonc
+{
+    // metadata casing
+    "key": "$key", // main, moon, dawn
+    "key_title": "$key:title", // Main, Moon, Dawn
+
+    // color formats
+    "accent": "$love" // #eb6f92
+    "accent_rgb": "$love:rgb_function" // rgb(235, 111, 146)
+}
+```
+These are the available casings that can be used to format metadata keys:
+
+- snake
+- kebab
+- camel
+- pascal
+- title
+- train
+- lower
+- upper
