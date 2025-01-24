@@ -21,11 +21,11 @@ pub enum Format {
     RgbNs,
     /// rgb(235, 188, 186)
     RgbFunction,
-    /// 235;188;186
-    RgbArray,
-    /// 2, 55%, 83%
-    RgbAnsi,
     /// [235, 188, 186]
+    RgbArray,
+    /// 235;188;186
+    RgbAnsi,
+    /// 2, 55%, 83%
     Hsl,
     /// 2 55% 83%
     HslNs,
