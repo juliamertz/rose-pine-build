@@ -66,7 +66,7 @@ pub struct Args {
     /// variable prefix
     pub prefix: char,
 
-    /// path to template file
+    /// path to template file or directory
     pub template_source: PathBuf,
 }
 

@@ -1,83 +1,49 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    flake-parts = {
-      url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
-    };
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
+
   outputs =
-    { nixpkgs, flake-parts, ... }@inputs:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = nixpkgs.lib.systems.flakeExposed;
-
-      perSystem =
+    { nixpkgs, ... }:
+    let
+      forEachSystem =
+        f:
+        nixpkgs.lib.genAttrs (nixpkgs.lib.systems.flakeExposed) (
+          system: f nixpkgs.legacyPackages.${system}
+        );
+    in
+    {
+      packages = forEachSystem (
+        pkgs: with pkgs;
+        let manifest = lib.importTOML ./build/Cargo.toml; in
         {
-          config,
-          pkgs,
-          lib,
-          system,
-          ...
-        }:
-        let
-          nativeBuildInputs =
-            with pkgs;
-            [
-              pkg-config
-              rustPlatform.bindgenHook
-            ]
-            ++ lib.optionals stdenv.isDarwin [ makeBinaryWrapper ];
-          buildInputs =
-            with pkgs;
-            [ openssl ] ++ lib.optionals stdenv.isDarwin (with darwin.apple_sdk.frameworks; [ IOKit ]);
-        in
-        {
-          packages.default =
-            let
-              manifest = (lib.importTOML ./build/Cargo.toml).package;
-            in
-            pkgs.rustPlatform.buildRustPackage {
-              inherit buildInputs nativeBuildInputs;
-              inherit (manifest)
-                name
-                version
-                ;
+          default = rustPlatform.buildRustPackage {
+            inherit (manifest.package) name version;
+            buildInputs = [ openssl ];
+            nativeBuildInputs = [ pkg-config ];
 
-              src = ./.;
-              cargoLock = {
-                lockFile = ./Cargo.lock;
-                allowBuiltinFetchGit = true;
-              };
-              meta.mainProgram = "rose-pine-build";
+            src = ./.;
+            cargoLock = {
+              lockFile = ./Cargo.lock;
+              allowBuiltinFetchGit = true;
             };
-          devShells.default = pkgs.mkShell {
-            name = "dev-shell";
-            inherit nativeBuildInputs;
-
-            buildInputs =
-              let
-                overlays = [ (import inputs.rust-overlay) ];
-                pkgs = import (inputs.nixpkgs) { inherit system overlays; };
-              in
-              buildInputs
-              ++ (with pkgs.rust-bin; [
-                (stable.latest.minimal.override {
-                  extensions = [
-                    "clippy"
-                    "rust-src"
-                  ];
-                })
-
-                nightly.latest.clippy
-                nightly.latest.rustfmt
-                nightly.latest.rust-analyzer
-              ]);
+            meta.mainProgram = "rose-pine-build";
           };
+        }
+      );
 
-        };
+      devShells.default = forEachSystem (
+        pkgs:
+        with pkgs;
+        mkShell {
+          nativeBuildInputs = [ pkg-config ];
+          buildInputs = [
+            openssl
+            clippy
+            rustfmt
+            rust-analyzer
+          ];
+        }
+      );
     };
 }
