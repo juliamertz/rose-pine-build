@@ -63,3 +63,31 @@ jobs:
           files: target/${{ matrix.target }}/release/rose-pine-build-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  generate-artifacts:  
+    needs: publish
+    name: Generate nix outputs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - uses: cachix/install-nix-action@v30
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - name: Install python dependencies
+      run: pip install --no-cache-dir requests
+   
+    - uses: workflow/nix-shell-action@v3
+      with:
+        packages: nixfmt-rfc-style
+        script: |
+          python3 nix/generate-artifacts.py | nixfmt > nix/generated.nix
+
+    - name: Commit changes
+      id: commit
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "[Update artifacts] ${{ github.event.head_commit.message || '(Manually triggered)' }}"
+        file_pattern: nix/generated.nix
