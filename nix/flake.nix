@@ -17,7 +17,7 @@
         pkgs:
         with pkgs;
         let
-          manifest = lib.importTOML ../build/Cargo.toml;
+          manifest = lib.importTOML ../crates/build/Cargo.toml;
         in
         {
           # patched binaries fetched from latest github release
