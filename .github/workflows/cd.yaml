@@ -71,6 +71,8 @@ jobs:
     steps:
     - name: Checkout source
       uses: actions/checkout@v4
+      with:
+        ref: main
 
     - uses: cachix/install-nix-action@v30
       with:
@@ -81,7 +83,7 @@ jobs:
    
     - uses: workflow/nix-shell-action@v3
       with:
-        packages: nixfmt-rfc-style
+        packages: nixfmt
         script: |
           python3 nix/generate-artifacts.py | nixfmt > nix/generated.nix
 
