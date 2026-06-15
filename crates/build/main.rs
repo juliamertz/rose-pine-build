@@ -3,6 +3,7 @@ mod format;
 mod generate;
 mod parse;
 mod utils;
+mod shade;
 
 use crate::config::{Args, Config};
 use anyhow::{Context, Result};
