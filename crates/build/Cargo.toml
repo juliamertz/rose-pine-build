@@ -1,9 +1,7 @@
 [package]
 name = "build"
-version = "0.1.0"
-edition = "2021"
-authors = ["Julia Mertz <info@juliamertz.dev>"]
-license = "MIT"
+version = "0.2.0"
+edition = "2024"
 
 [[bin]]
 name = "rose-pine-build"

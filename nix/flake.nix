@@ -45,12 +45,13 @@
           mkShell {
             nativeBuildInputs = [ pkg-config ];
             buildInputs = [
+              cargo
+              rustc
               openssl
               clippy
               rustfmt
               rust-analyzer
-
-              nixfmt-rfc-style
+              nixfmt
               (pkgs.python3.withPackages (pp: [
                 pp.requests
               ]))

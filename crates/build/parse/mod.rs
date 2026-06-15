@@ -36,10 +36,16 @@ enum Side<T> {
     Close(T),
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Shading {
+    Darken(u8),
+    Lighten(u8),
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Template {
     Metadata(Metadata, Option<Case>),
-    Role(RoleCaptures, Option<Format>, Option<u16>),
+    Role(RoleCaptures, Option<Format>, Option<u16>, Option<Shading>),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -56,6 +62,7 @@ pub enum ParseError {
     CloseDelimExpected,
     #[allow(dead_code)]
     InvalidOpacity(ParseIntError),
+    InvalidUint,
 }
 
 struct Lexer {
@@ -77,7 +84,7 @@ impl Default for ParseOptions {
 impl Capture {
     pub fn format(&self, variant: &Variant, options: &Options) -> String {
         match self.template {
-            Template::Role(ref role, format, alpha) => {
+            Template::Role(ref role, format, alpha, shading) => {
                 let format = match format {
                     Some(ref format) => format,
                     None => &options.format,
@@ -89,7 +96,14 @@ impl Capture {
                     alpha
                 };
 
-                format.format_color(role.get_color(variant), alpha)
+                let color = role.get_color(variant);
+                let adjusted_color = match shading {
+                    Some(Shading::Darken(steps)) => crate::shade::darken(color, steps),
+                    Some(Shading::Lighten(steps)) => crate::shade::lighten(color, steps),
+                    None => color,
+                };
+
+                format.format_color(adjusted_color, alpha)
             }
             Template::Metadata(key, case) => {
                 let value = key.format(variant);
@@ -233,6 +247,17 @@ where
     }
 }
 
+fn read_uint(lexer: &mut Lexer) -> Result<u8, ParseError> {
+    if let Some(curr) = lexer.current().copied()
+        && curr.is_ascii_digit()
+    {
+        lexer.advance();
+        Ok(curr as u8 - b'0')
+    } else {
+        Err(ParseError::InvalidUint)
+    }
+}
+
 fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
     let mut roles = RoleCaptures::new();
 
@@ -295,6 +320,18 @@ fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
         roles.push(parse_enum_variant(lexer, Case::Snake)?);
     }
 
+    let shading = match lexer.current() {
+        Some('+') => {
+            lexer.advance();
+            Some(read_uint(lexer).map(Shading::Lighten)?)
+        }
+        Some('-') => {
+            lexer.advance();
+            Some(read_uint(lexer).map(Shading::Darken)?)
+        }
+        _ => None,
+    };
+
     let format = if lexer.current() == Some(&':') {
         lexer.advance();
         Some(parse_enum_variant::<Format>(lexer, Case::Snake)?)
@@ -330,7 +367,7 @@ fn parse_capture(lexer: &mut Lexer) -> Result<Capture, ParseError> {
     };
 
     Ok(Capture {
-        template: Template::Role(roles, format, opacity),
+        template: Template::Role(roles, format, opacity, shading),
         start,
         end: lexer.index - 1,
     })

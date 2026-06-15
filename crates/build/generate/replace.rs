@@ -56,6 +56,14 @@ mod tests {
             generate_variant(Variant::Moon, "$pine:rgb_function/80"),
             "rgb(62, 143, 176, 0.8)"
         );
+        assert_eq!(
+            generate_variant(Variant::Moon, "$pine+1:rgb_function/80"),
+            "rgb(93, 168, 198, 0.8)"
+        );
+        assert_eq!(
+            generate_variant(Variant::Moon, "$pine-1:rgb_function/80"),
+            "rgb(49, 114, 140, 0.8)"
+        );
     }
 
     #[test]

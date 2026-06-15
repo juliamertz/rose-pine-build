@@ -1,8 +1,8 @@
 [package]
 name = "palette"
 description = "All natural pine, faux fur and a bit of soho vibes for the classy minimalist"
-version = "0.1.0"
-edition = "2021"
+version = "0.2.0"
+edition = "2024"
 license = "MIT"
 
 [lib]

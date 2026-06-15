@@ -12,6 +12,20 @@ fn role_variants() {
         11,
     );
     assert_role_with_pos("$pine", vec![Role::Pine], None, None, 0, 4);
+    assert_role_with_shading(
+        "$pine+3:rgb",
+        vec![Role::Pine],
+        Some(Format::Rgb),
+        None,
+        Some(Shading::Lighten(3)),
+    );
+    assert_role_with_shading(
+        "$pine-2",
+        vec![Role::Pine],
+        None,
+        None,
+        Some(Shading::Darken(2)),
+    );
     assert_role("$(pine)", vec![Role::Pine], None, None);
     assert_role_with_pos(
         "$love:rgb_function",
@@ -94,11 +108,21 @@ fn format() {
     assert_role("$base:ahex", vec![Role::Base], Some(Format::Ahex), None);
     assert_capture(
         "$base:hex_ns",
-        Template::Role(RoleCaptures(vec![Role::Base]), Some(Format::HexNs), None),
+        Template::Role(
+            RoleCaptures(vec![Role::Base]),
+            Some(Format::HexNs),
+            None,
+            None,
+        ),
     );
     assert_capture(
         "$base:ahex_ns",
-        Template::Role(RoleCaptures(vec![Role::Base]), Some(Format::AhexNs), None),
+        Template::Role(
+            RoleCaptures(vec![Role::Base]),
+            Some(Format::AhexNs),
+            None,
+            None,
+        ),
     );
 }
 
@@ -136,7 +160,23 @@ fn metadata() {
 }
 
 fn assert_role(content: &str, roles: Vec<Role>, format: Option<Format>, alpha: Option<u16>) {
-    assert_capture(content, Template::Role(RoleCaptures(roles), format, alpha));
+    assert_capture(
+        content,
+        Template::Role(RoleCaptures(roles), format, alpha, None),
+    );
+}
+
+fn assert_role_with_shading(
+    content: &str,
+    roles: Vec<Role>,
+    format: Option<Format>,
+    alpha: Option<u16>,
+    shading: Option<Shading>,
+) {
+    assert_capture(
+        content,
+        Template::Role(RoleCaptures(roles), format, alpha, shading),
+    );
 }
 
 fn assert_role_with_pos(
@@ -152,13 +192,15 @@ fn assert_role_with_pos(
     let correct = Capture {
         start,
         end,
-        template: Template::Role(RoleCaptures(roles), format, alpha),
+        template: Template::Role(RoleCaptures(roles), format, alpha, None),
     };
 
     match parse::parse_capture(&mut lexer) {
         Ok(capture) => assert_eq!(correct, capture),
         Err(e) => {
-            panic!("Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}")
+            panic!(
+                "Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}"
+            )
         }
     }
 }
@@ -175,7 +217,9 @@ fn assert_metadata(content: &str, key: Metadata, case: Option<Case>, start: usiz
     match parse::parse_capture(&mut lexer) {
         Ok(capture) => assert_eq!(correct, capture),
         Err(e) => {
-            panic!("Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}")
+            panic!(
+                "Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}"
+            )
         }
     }
 }
@@ -187,7 +231,9 @@ fn assert_capture(content: &str, correct: Template) {
         Ok(capture) => assert_eq!(correct, capture.template),
 
         Err(e) => {
-            panic!("Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}")
+            panic!(
+                "Unable to parse capture, expected: {correct:?}\nerror: {e:?} \nlexer state: {lexer:?}"
+            )
         }
     }
 }
