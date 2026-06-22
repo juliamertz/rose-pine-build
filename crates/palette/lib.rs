@@ -1,14 +1,41 @@
+pub mod transform;
 pub mod variant;
+
 pub use variant::*;
 
 use serde::Serialize;
 use strum_macros::{Display, EnumIter, EnumString, VariantNames};
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Color {
     pub rgb: Rgb,
     pub hsl: Hsl,
-    pub hex: String,
+}
+
+impl Color {
+    pub const fn new(rgb: Rgb, hsl: Hsl) -> Self {
+        Self { rgb, hsl }
+    }
+
+    pub const BLACK: Self = Self {
+        rgb: Rgb { r: 0, g: 0, b: 0 },
+        hsl: Hsl { h: 0, s: 0, l: 0 },
+    };
+
+    pub const WHITE: Self = Self {
+        rgb: Rgb { r: 255, g: 255, b: 255 },
+        hsl: Hsl { h: 0, s: 0, l: 100 },
+    };
+
+    #[inline]
+    pub const fn is_light(&self) -> bool {
+        self.hsl.l > 70
+    }
+
+    #[inline]
+    pub const fn is_dark(&self) -> bool {
+        !self.is_light()
+    }
 }
 
 #[repr(C)]
@@ -53,15 +80,13 @@ pub type Hex = String;
 impl From<Rgb> for Color {
     fn from(rgb: Rgb) -> Self {
         let hsl: Hsl = rgb.into();
-        let hex = rgb.to_hex_string();
-        Self { rgb, hsl, hex }
+        Self { rgb, hsl }
     }
 }
 impl From<Hsl> for Color {
     fn from(hsl: Hsl) -> Self {
         let rgb: Rgb = hsl.into();
-        let hex = rgb.to_hex_string();
-        Self { rgb, hsl, hex }
+        Self { rgb, hsl }
     }
 }
 
@@ -110,11 +135,11 @@ pub enum Role {
 
 impl Role {
     pub const fn get_rgb(&self, variant: &Variant) -> Rgb {
-        variant.get_rgb(*self)
+        variant.get_role(*self).rgb
     }
 
     pub const fn get_hsl(&self, variant: &Variant) -> Hsl {
-        variant.get_hsl(*self)
+        variant.get_role(*self).hsl
     }
 
     pub fn get_hex(&self, variant: &Variant) -> Hex {
@@ -125,7 +150,6 @@ impl Role {
         Color {
             rgb: self.get_rgb(v),
             hsl: self.get_hsl(v),
-            hex: self.get_hex(v),
         }
     }
 }

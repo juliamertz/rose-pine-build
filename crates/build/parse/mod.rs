@@ -98,8 +98,12 @@ impl Capture {
 
                 let color = role.get_color(variant);
                 let adjusted_color = match shading {
-                    Some(Shading::Darken(steps)) => crate::shade::darken(color, steps),
-                    Some(Shading::Lighten(steps)) => crate::shade::lighten(color, steps),
+                    Some(Shading::Darken(steps)) => {
+                        palette::transform::relative_darken(color, steps)
+                    }
+                    Some(Shading::Lighten(steps)) => {
+                        palette::transform::relative_lighten(color, steps)
+                    }
                     None => color,
                 };
 

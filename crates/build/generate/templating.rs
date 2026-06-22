@@ -1,6 +1,5 @@
 use anyhow::Result;
 use palette::Variant;
-use strum::IntoEnumIterator;
 use tera::{Context, Tera};
 
 mod filters {

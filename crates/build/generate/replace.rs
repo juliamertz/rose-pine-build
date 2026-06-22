@@ -5,7 +5,6 @@ use crate::{
     utils::Substitutable,
 };
 use palette::Variant;
-use strum::IntoEnumIterator;
 
 fn replace_captures(
     captures: &[Capture],
